@@ -1,0 +1,53 @@
+import glob
+import os
+import sys
+import subprocess
+import getpass
+
+def go(Parset,njobs=3,PaternMS=None,lMS=None,CleanMem=True,AddCols=True): 
+
+   if CleanMem==True:
+      pwd=getpass.getpass("Enter sudo password for freemem operation: ")
+
+   if PaternMS!=None:
+      ll=glob.glob(PaternMS)
+   elif lMS!=None:
+      ll=lMS
+ 
+   nMS = len(ll)
+   jobbounds=range(0,nMS,njobs)
+   # if-condition to ensure that stragglers at the end of ll are also accounted for
+   if jobbounds[-1]!=(nMS): jobbounds.append(nMS)
+   for i in range(len(jobbounds)-1): # i.e. every njobs
+      # create array on which to append subprocesses for the wait() command
+      pop=[]
+      # define bounds within which we'll be working this iteration
+      jbegin=jobbounds[i]
+      jend=jobbounds[i+1]
+      print "we're in batch %i - %i of %i"%(jbegin+1,jend,len(ll))
+      for j in range(jbegin,jend):
+         if AddCols==True:
+            os.system("MSTools.py --ms=%s > %s.mstools.log 2>&1"%(ll[j],ll[j]))
+         #ss="sleep 1s; echo done %s in batch %i"%(ll[j],i)
+         ss="killMS.py %s --MSName %s  > %s.killms.log 2>&1"%(Parset,ll[j],ll[j])
+         #ss="killMS.py %s --MSName=%s"%(Parset,ll[j])
+         print "executing command: %s"%ss
+         pop.append(subprocess.Popen(ss,shell=True))
+         # impose wait condition
+      for p in pop:
+         p.wait()
+      for j in range(jbegin,jend):
+         print "Batch endstate:"
+         endstate="tail -n 3 %s.killms.log"%ll[j]
+         os.system(endstate)
+         os.system("/home/cyril.tasse/PipelineCEP/PipelineCEP/clipcal.py --InCol=CORRECTED_DATA --ms=%s > %s.clipcal.log 2>&1"%(ll[j],ll[j]))
+      if CleanMem==True:
+         print "Cleaning memory"
+         os.system("echo %s | sudo -S /cep/lofar/bin/freemem 1; CleanSHM.py"%pwd)
+
+
+if __name__=="__main__":
+    parset=sys.argv[1]
+    # give measurement sets as *.MS last when calling BatchBBS.py
+    lMS = sorted(sys.argv[2::])
+    go (parset,lMS=lMS)
