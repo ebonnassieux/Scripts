@@ -1,0 +1,210 @@
+import numpy as np
+from pyrap.tables import table
+import pylab
+import scipy.ndimage
+
+class SimulGains:
+    def __init__(self,MSname,ant1=0,ant2=55):
+        self.MS=table(MSname)
+        # define antennas                                                                                                                         
+        self.Antenna=table(MSname+"/ANTENNA")
+        A0=self.MS.getcol("ANTENNA1")
+        A1=self.MS.getcol("ANTENNA2")
+        # define single baseline
+        self.baseline=np.where((A0==ant1)&(A1==ant2))[0]
+        # define UVW tracks
+        self.UV=self.MS.getcol("UVW")[self.baseline].T
+# debug: only use 1 timestep
+#        UV1=self.MS.getcol("UVW")[self.baseline].T
+#        self.UV=UV1[:,0:100]
+# end debug
+        self.nrow=len(self.UV[0])
+        # exit gracefully
+        self.MS.close()
+        self.Antenna.close()
+
+    def Gains(self,realisations=2000):
+        # cast it so that it is easily implemented later
+        sh=realisations,self.nrow,1,1
+        # make method to return number of samples easily
+        self.NSample=realisations
+        # return 1 set of N_timesteps random numbers for each realisation
+        output= np.random.randn(*sh)+1j*np.random.randn(*sh)
+        # make sure output has zero mean
+        output=output-np.mean(output.real)
+        output=output-1j*np.mean(output.imag)
+        print "mean, var=",np.mean(output),np.var(output)
+        return output
+
+
+    def noiseconvolver(self,noisefunc, sigma):
+        # create gaussian signal from lowbound to highbound
+        x=np.arange(self.nrow)
+        # centre numbers on zero
+        x-=x.size/2.
+        # calculate normalised Gaussian
+        gaussignal=np.exp(-(x)**2/(2*sigma**2))/np.sqrt(2*np.pi*sigma**2)
+        # convolve it with noisefunc
+        convfunc=np.zeros_like(noisefunc)
+        N,_,_,_=noisefunc.shape
+        # convolve once per realisation
+        for i in range(N):
+            convfunc[i,:,0,0]=np.convolve(noisefunc[i,:,0,0],gaussignal,mode='same')
+        # normalise convfunc such that it has roughly the same amplitude as
+        # original function
+        convfunc[:,:,0,0]/=np.std(convfunc[:,:,0,0])
+        return convfunc
+
+    def DFT(self,func,u,v,DiamDeg=1.,Npix=101,loop=False):
+        print "in DFT"
+        # convert diameter to degrees
+        Diam=DiamDeg*np.pi/180
+        # create l,m
+        l1,m1=np.mgrid[-Diam/2.:Diam/2.:1j*(Npix+1),-Diam/2.:Diam/2.:1j*(Npix+1)]
+        l1=l1+0.5*Diam/Npix
+        m1=m1+0.5*Diam/Npix
+        l=l1[0:-1,0:-1]
+        m=m1[0:-1,0:-1]
+#        print "input variance:",np.var(func)
+        # reshape for pythonic operations
+        usize=u.size
+        u=u.reshape((1,u.size,1,1))
+        v=v.reshape((1,v.size,1,1))
+        l=l.reshape((1,1,Npix,Npix))
+        m=m.reshape((1,1,Npix,Npix))
+        # default method for calculating ImStack
+        if loop==False:
+            print "in pythonic loop"
+            # make cube, stack it along time-axis
+            CubeIm=np.exp(2.*np.pi*1j*(u*l+v*m))*func
+            ImStack=np.mean(CubeIm,axis=1)#np.mean(CubeIm.real,axis=1)+1j*np.mean(CubeIm.imag,axis=1)
+            # make variance stack and exit gracefully
+        # this loop is for when func is too big, to limit RAM use
+        if loop==True:
+            print "in iterator loop"#,func.shape
+            # initialise cube
+            ImStack=np.zeros((self.NSample,Npix,Npix),np.complex64)
+            print "begin iteration"
+#            u=u.reshape(1,u.size)
+#            v=v.reshape(1,v.size)
+            # iterate over pixels
+            for ipix in range(Npix):
+                for jpix in range(Npix):
+                    print "so far, at: %f / %f, %f / %f"%(ipix,Npix,jpix,Npix)
+                    pixsum=func*np.exp(2.*np.pi*1j*(u*l[0,0,ipix,jpix]+v*m[0,0,ipix,jpix]))
+                    ImStack[:,ipix,jpix]=np.mean(func[0,:,0,0]*np.exp(2.*np.pi*1j*(u[0,:,0,0]*l[0,0,ipix,jpix]+v[0,:,0,0]*m[0,0,ipix,jpix])))
+#(func*np.exp(2.*np.pi*1j*(u*l[0,0,ipix,jpix]+v*m[0,0,ipix,jpix])),axis=1)[:,0,0]
+                    print "in pixel i,j, value:",l[0,0,ipix,jpix],m[0,0,ipix,jpix]
+                    print "in pixel u,v, value:",u.shape,v.shape
+#                    print "value put in:",np.mean(func[0,:,0,0]*np.exp(2.*np.pi*1j*(u[0,:,0,0]*l[0,0,ipix,jpix]+v[0,:,0,0]*m[0,0,ipix,jpix])),axis=1)[:,0,0]
+                    print "value of func:",func
+#            stop
+        # return outputs and exit gracefully
+#        print "output variance:",np.var(ImStack)
+        #stop
+        return ImStack
+
+    def MakeCovMapSimul(self,residual_gains,sigma=0,diamdeg=1.,npix=101):
+        print "in simulated covmap"
+        # convolve residual gains
+        if sigma != 0:
+            residual_gains=self.noiseconvolver(residual_gains, sigma)
+        # find UV tracks
+        us,vs,_=self.UV
+        # make image
+        image=self.DFT(residual_gains,us,vs,DiamDeg=diamdeg,Npix=npix,loop=False)
+        varimage=np.var(image,axis=0)
+        return image,varimage
+
+    def MakeCovMapTheoretical(self,residual_gains,sigma=0,diamdeg=1.,npix=101):
+        # convolve residual gains
+        print "in theoretical covmap"
+        if sigma != 0:
+            residual_gains=self.noiseconvolver(residual_gains, sigma)
+        # find number of timesteps in a given realisation
+        NSample=len(np.array(residual_gains)[0,:,0,0])
+        # make delta-u,delta-v tracks
+        us,vs,_=self.UV
+        dus=us.reshape((1,us.size))-us.reshape((us.size,1))
+        dvs=vs.reshape((1,vs.size))-vs.reshape((vs.size,1))
+        dus=dus.flatten()
+        dvs=dvs.flatten()
+        # make covariance matrix
+        ax1=residual_gains[:,:,0,0]
+        nmatrix=np.dot((ax1.conj()).T,ax1)/self.NSample
+        #stopfuck
+        # remove variances, leaving only covariances
+#        print "nmatrix:\n",nmatrix
+        dudvdata=nmatrix.flatten()
+        dudvdata=dudvdata.reshape(1,len(dudvdata),1,1)
+        # make image
+        image=self.DFT(dudvdata,dus,dvs,DiamDeg=diamdeg,Npix=npix,loop=True)
+
+        #stop
+        return image,nmatrix
+
+def test():
+#    inst=SimulGains(MSname="/data/etienne.bonnassieux/XMMLSS/Run3/demix/XMMLSS_field/DATA/test.MS")
+    pixels=5
+    inst=SimulGains(MSname="/data/tasse/BOOTES/BOOTES24_SB140-149.2ch8s.ms")
+    gg_corr=inst.Gains()
+    ctime1=200
+    ctime2=50
+    ctime3=200
+    imsize=.5/60 # angular size of image
+    simIM,simVIM=inst.MakeCovMapSimul(residual_gains=gg_corr,sigma=ctime1,diamdeg=imsize,npix=pixels)
+    theoVIM,nmatrix=inst.MakeCovMapTheoretical(residual_gains=gg_corr,sigma=ctime1,diamdeg=imsize,npix=pixels)
+
+    theoVIM1=np.mean(theoVIM,axis=0).real
+    
+    print "simulated variance image:",simVIM
+    print "expected noise psf:",theoVIM1
+
+    pylab.figure(1)#,figsize=(12,12))
+    pylab.clf()
+    pylab.suptitle("Variance in each pixel over many realisations")
+
+    pylab.subplot(1,3,1)
+    pylab.title("Predicted with Ctime=%d"%ctime1)
+    pylab.imshow(theoVIM1,interpolation='nearest')#x,vmin=0,vmax=0.2)
+    pylab.colorbar()
+    
+    pylab.subplot(1,3,2)
+    pylab.title("Seen with Ctime=%d"%ctime1)
+    pylab.imshow(simVIM,interpolation='nearest')#x,vmin=0,vmax=0.2)
+    pylab.colorbar()
+
+    pylab.subplot(1,3,3)
+    pylab.title("covariance matrix")
+    pylab.imshow(nmatrix.real,interpolation='nearest')#x,vmin=0,vmax=0.2)    
+    pylab.colorbar()
+
+
+
+#    pylab.subplot(1,4,3)
+#    pylab.title("Ctime=%d"%ctime2)
+#    pylab.imshow(IM[0],interpolation='nearest')#x,vmin=0,vmax=0.2)                                                                                                    
+#    pylab.colorbar()
+
+#    pylab.subplot(1,4,4)
+#    pylab.title("Ctime=%d"%ctime2)
+#    pylab.imshow(VIM,interpolation='nearest')#x,vmin=0,vmax=0.2)                                                                                                      
+#    pylab.colorbar()
+
+#    pylab.subplot(1,6,1)
+#    pylab.title("Ctime=%d"%ctime3)
+#    pylab.imshow(IM[0],interpolation='nearest')#x,vmin=0,vmax=0.2)                                                                                                    
+#    pylab.colorbar()
+    
+#    pylab.subplot(1,6,2)
+#    pylab.title("Ctime=%d"%ctime3)
+#    pylab.imshow(VIM,interpolation='nearest')#x,vmin=0,vmax=0.2)                                                                                                      
+#    pylab.colorbar()
+
+    pylab.draw()
+#    pylab.savefig("ctime=200.png")
+    pylab.show(False)
+#    stop
+
+if __name__=="__main__":
+    test()

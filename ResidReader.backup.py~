@@ -1,0 +1,152 @@
+from pyrap.tables import table
+import numpy as np
+import pylab
+from numpy import ma
+#from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+def invSVD(A):
+    u,s,v=np.linalg.svd(A)#+np.random.randn(*A.shape)*(1e-6*A.max()))
+    #s[s<0.]=1.e-6
+    print u.shape, s.shape, v.shape
+#    s[s<1.e-6*s.max()]=1.e-6*s.max()
+    wheremat=np.zeros(s.shape)
+    wheremat[s<1.e-6*s.max()]=1
+    ssq=(1./s)
+    ssq[wheremat==1]=0
+    Asq=np.conj(np.dot(np.dot(v.T,ssq),u.T))
+    v0=v.T*ssq.reshape(1,ssq.size)
+    print Asq-np.linalg.inv(A)
+    return Asq
+
+def testSVD():
+    MatTest=np.random.random((3,3))+1j*np.random.random((3,3))
+    print MatTest
+    invSVD(MatTest)
+
+def AddCol(self,ColName):
+    t=table(self.MSName,readonly=False,ack=False)
+    if (ColName in t.colnames()):
+        #print>>log, "  Column %s already in %s"%(ColName,self.MSName)
+        t.close()
+        return
+    #print>>log, "  Putting column %s in %s"%(ColName,self.MSName)
+    desc=t.getcoldesc("DATA")
+    desc["name"]=ColName
+    desc['comment']=desc['comment'].replace(" ","_")
+    t.addcols(desc)
+    t.close()
+
+
+def FindCovMat(MSname="/data/etienne.bonnassieux/CalibTests/killMS/L369838_SB435_uv.dppp.MS.cyril"):
+    # load measurement set
+    ms=table(MSname,readonly=False)
+    # open antennas
+    ants=table(ms.getkeyword("ANTENNA"))
+    # open antenna tables
+    nAnt=len(ants.getcol("NAME"))
+    A0=ms.getcol("ANTENNA1")
+    A1=ms.getcol("ANTENNA2")
+    Times=ms.getcol("TIME")
+    nbl=np.where(Times==Times[0])[0].size
+    norm=1/ms.getcol("PREDICTED_DATA")
+    norm[np.isnan(norm)]=0
+    residuals=(ms.getcol("CORRECTED_DATA_BACKUP")-ms.getcol("PREDICTED_DATA"))*norm
+    ms.putcol("CORRECTED_DATA",residuals)
+#    flags=ms.getcol("FLAG")
+    # bootes test; true flags are in different dir
+    flags=np.load(MSname+"/Flagging.npy")
+    # apply flags to data
+    residuals[flags==1]=0
+    # exit files gracefully
+    ms.close()
+    ants.close()
+    # initialise matshape
+    nChan=residuals.shape[1]
+    nPola=residuals.shape[2]
+    nt=residuals.shape[0]/nbl
+    MatShape=(nAnt,nAnt,nChan,nPola,nt)
+# todo: implement line below
+#    MatShape=(nAnt,nAnt,ntSol,nChan,nPola,nt/ntSol)
+# idea: append 0 to nt until nt.size=int*ntSol; do this in definition of nt
+# i.e. append 0 in a loop for modulo(nt.size,ntSol), i.e. from 1 to 4 in the earlier case
+    A=np.zeros(MatShape,np.complex64)
+    NPerCell=np.zeros(MatShape,np.complex64) # defined as complex to avoid losing information
+    
+    for ant1 in range(nAnt):
+        for ant2 in range(nAnt):
+            print ant1,ant2
+            # PARALLELISE HERE
+            indA0A1=np.where(((A0==ant1)&(A1==ant2))|((A0==ant2)&(A1==ant1)))[0]
+            # skip loop when antenna has no corresponding baselines
+            if indA0A1.size==0: continue
+            # skip autocorrelations
+            if ant1==ant2: continue
+            for ichan in range(nChan):
+                for ipol in range(nPola):
+                    A[ant1,ant2,ichan,ipol,:]=residuals[indA0A1,ichan,ipol]
+                    NPerCell[ant1,ant2,ichan,ipol,:]+=(1-flags[indA0A1,ichan,ipol])
+
+    A=A.reshape((nAnt*nAnt*nChan*nPola,nt))
+    NPerCell=NPerCell.reshape((nAnt*nAnt*nChan*nPola,nt))
+    C=np.dot(A.T.conj(),A)
+    NMat=np.dot(NPerCell.T,NPerCell)
+    # for when only diag is needed
+    #C=np.diag(np.sum(A.conj()*A,axis=0))
+    #NMat=np.diag(np.sum(NPerCell*NPerCell,axis=0))
+    np.save("C.npy",C)
+    # avoid divide-by-zero errors for zeros in denominator
+    NMat[NMat==0]=1
+    # normalise
+    C=C/NMat
+    np.save("Cnorm.npy",C)
+    np.save("NMat.npy",NMat)
+#    # clean up Cnorm
+#    # find fft
+#    Cfft=np.fft.fft2(C)
+#    np.save("Cfft.npy",Cfft)
+#    # create mask
+#    axis=Cfft.shape[0]
+#    maskmat=np.ones((axis,axis))
+#    maskmat=maskmat-np.eye(axis)
+#    for diagrange in range(1,axis/10):
+#        maskmat=maskmat-np.eye(axis,k=diagrange)
+#        maskmat=maskmat-np.eye(axis,k=-diagrange)
+#    # perform dark magic to rotate the mask 90 degrees
+#    maskmat=zip(*maskmat[::-1])    
+#    #old CleanCfft=ma.masked_array(Cfft,mask=maskmat,fill_value=0).filled()
+#    CleanCfft = Cfft
+#    CleanCfft[maskmat==0]=0
+#    np.save("CleanCfft.npy",CleanCfft)
+#    # find inverse FFT to go back to clean covmat
+#    CleanC=np.fft.ifft2(CleanCfft)
+#    np.save("CleanC.npy",CleanC)
+    # invert CleanC
+    Weight=np.abs(invSVD(C))
+    # save weights matrix
+    np.save("Weight.npy",Weight)
+
+
+
+def SaveWeights(Weight,MSname):
+    # open measurement set to store CTB_DATA
+    ms=table(MSname,readonly=False)
+    # open TIME to assign weights properly
+    tarray=ms.getcol("TIME")
+    W=ms.getcol("IMAGING_WEIGHT")
+    nrow,nchan=W.shape
+    tvalues=np.array(sorted(list(set(tarray))))
+    nt=tvalues.shape[0]
+    nbl=tarray.shape[0]/nt
+    Wr=W.reshape((nt,nbl,nchan))
+#    print ms.iswritable()
+    for ibl in range(nbl):
+         for ichan in range(nchan):
+             Wr[:,ibl,ichan]=np.sum(Weight[:],axis=0)
+    W=Wr.reshape((nt*nbl,nchan))
+    # normalise
+    W=W/np.sum(W)
+    # to see difference
+    Wones=np.ones(W.shape)
+    # store CTB_data in measurement set
+    ms.putcol("IMAGING_WEIGHT",np.abs(W))
+    ms.close()

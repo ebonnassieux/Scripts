@@ -1,0 +1,9 @@
+/data/etienne.bonnassieux/GrothStrip/28_08_2014/DATA/L242400_SB020_uv.dppp.MS
+/data/etienne.bonnassieux/GrothStrip/28_08_2014/DATA/L242400_SB021_uv.dppp.MS
+/data/etienne.bonnassieux/GrothStrip/28_08_2014/DATA/L242400_SB022_uv.dppp.MS
+/data/etienne.bonnassieux/GrothStrip/28_08_2014/DATA/L242400_SB023_uv.dppp.MS
+/data/etienne.bonnassieux/GrothStrip/28_08_2014/DATA/L242400_SB024_uv.dppp.MS
+/data/etienne.bonnassieux/GrothStrip/28_08_2014/DATA/L242400_SB025_uv.dppp.MS
+/data/etienne.bonnassieux/GrothStrip/28_08_2014/DATA/L242400_SB026_uv.dppp.MS
+/data/etienne.bonnassieux/GrothStrip/28_08_2014/DATA/L242400_SB027_uv.dppp.MS
+/data/etienne.bonnassieux/GrothStrip/28_08_2014/DATA/L242400_SB029_uv.dppp.MS

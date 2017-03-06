@@ -76,7 +76,7 @@ if __name__=="__main__":
     print "RA  : %s"%RA
     print "Dec : %s"%Dec
     vmin=-10  # in units of sigma
-    vmax= 40  # in units of sigma 
+    vmax= 4xs0  # in units of sigma 
 
     # make some control loop to say that RA, Dec need to be given in hexadecimal
     
