@@ -35,6 +35,7 @@ def DropName(filename):
         namelist=np.load(filename)
         basename=filename[-4:]
     else:
+        namelist=ReadList(filename)
         basename=filename
 
     ChosenOutname=basename+".chosen.npy"
@@ -60,14 +61,26 @@ def DropName(filename):
     else:
         if name in chosenList:
             print "THIS MORTAL HAS ALREADY PAID THEIR DUES"
+            print "MORTALS REMAINING:\n",unchosenList
             unchosenList=np.sort(unchosenList[unchosenList!=name])
             np.save(UnchosenOutname,unchosenList)
         else:
-            unchosenList=np.sort(unchosenList[unchosenList!=name])
-            chosenList=np.sort(np.append(chosenList,name))            
-            np.save(UnchosenOutname, unchosenList)
-            np.save(ChosenOutname,chosenList)
-            print "THIS PACT IS SEALED, MORTAL"
+            accept=raw_input("DOES THIS MORTAL ACCEPT? MNAR STONES ARE NO PROTECTION [y/n] ")
+            if accept==None:
+              accept="y"  
+            elif accept!="y" and accept!="n":
+                accept=raw_input("FOOLISH MORTAL! DO NOT DEFY THE RATT HAT, ANSWER \"y\" TO ACCEPT THE SACRIFICE: ")
+            if accept=="y":
+                unchosenList=np.sort(unchosenList[unchosenList!=name])
+                chosenList=np.sort(np.append(chosenList,name))            
+                np.save(UnchosenOutname, unchosenList)
+                np.save(ChosenOutname,chosenList)
+                print "THIS PACT IS SEALED, MORTAL"
+                print "MORTALS REMAINING:\n",unchosenList
+            else:                
+                print "THIS MORTAL IS SPARED. SUMMON THE RATT HAT AGAIN FOR A NEW SACRIFICE"
+                print "MORTALS REMAINING:\n",unchosenList
+
 
 def ASCIIwizardHat():
     print "            .             "
