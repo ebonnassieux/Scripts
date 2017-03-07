@@ -5,6 +5,7 @@ import pylab
 from numpy import ma
 import sys
 import warnings
+import time
 
 class VarianceWeights:
     def __init__(self,MSname,imtype="DDF",ntSol=1,CalcHalfMat=False,useInvSVD=False,DiagOnly=False,SaveDataProducts=True,MaxCorrTime="Full"):
@@ -18,7 +19,7 @@ class VarianceWeights:
         #               default: "Full" this calculates over the entire timeframe of the MS.
         #               setting MaxCorrTime=0 is equivalent to DiagOnly=True
         if MSname[-1]=="/":
-            self.MSName=MSname[0:-2]
+            self.MSName=MSname[0:-1]
         else:
             self.MSName=MSname
         self.imtype=imtype
@@ -62,7 +63,7 @@ class VarianceWeights:
             # bootes test; true flags are in different dir
             flags=ms.getcol("FLAG")#np.load(self.MSName+"/Flagging.npy")
         else:
-            print "Not using DDF products: please ensure that CORRECTED_DATA contains residual visibilities from complete skymodel subtraction, normalised by the uncalibrated flux."
+            print "Not using DDF products: please ensure that CORRECTED_DATA contains residual visibilities from complete skymodel subtraction, and PREDICTED_VIS contains the uncalibrated flux."
             residuals=(ms.getcol("CORRECTED_DATA")*norm)
             flags=ms.getcol("FLAG")
         # apply flags to data
@@ -148,18 +149,12 @@ class VarianceWeights:
         # save raw matrix
         if self.SaveDataProducts==True:
             np.save(self.MSName+"/C.npy",C)
-        # normalise
-        C=C/NMat
         # invert C
         if self.DiagOnly==True:
-#            print "DEBUG", np.sum(NMat)
             Weight=np.abs(np.diag((np.diag(C)/np.diag(NMat))**(-1)))
-#            pylab.plot(np.diag(Weight))
-#            pylab.show()
         else:
             # normalise
             C=C/NMat
-        if self.DiagOnly==False:
             if self.useInvSVD==True:
                 Weight=np.abs(invSVD(C))
             else:
@@ -170,7 +165,7 @@ class VarianceWeights:
         # normalise weights matrix
         Weight=Weight/np.mean(Weight)
         print "average to 1"
-        pylab.clf()
+
         # resize matrix appropriately if needed
         if self.ntSol>1:
             C1=np.zeros((nt,nt),np.complex64)
@@ -180,36 +175,22 @@ class VarianceWeights:
                 if DiagOnly==True:
                     C1[i*self.ntSol:(i+1)*self.ntSol,i*self.ntSol:(i+1)*self.ntSol]=C[i,i]
                     Weight1[i*2:(i+1)*self.ntSol,i*self.ntSol:(i+1)*self.ntSol]=Weight[i,i]
-                    PrintProgress(i,tlen)
+                    PrintProgress(i+1,tlen)
                 else:
                     for j in range(tlen):
                         C1[i*self.ntSol:(i+1)*self.ntSol,j*self.ntSol:(j+1)*self.ntSol]=C[i,j]
-                        Weight1[i*2:(i+1)*self.ntSol,j*self.ntSol:(j+1)*self.ntSol]=Weight[i,j]
+                        Weight1[i*self.ntSol:(i+1)*self.ntSol,j*self.ntSol:(j+1)*self.ntSol]=Weight[i,j]
                         PrintProgress(i*j+j,tlen*tlen)
-#            pylab.plot(np.diag(C1))
-#            pylab.show()
             C=C1[0:(nt+tspill-self.ntSol),0:(nt+tspill-self.ntSol)]
             Weight=Weight1[0:(nt+tspill-self.ntSol),0:(nt+tspill-self.ntSol)]
+
         if self.SaveDataProducts==True:
             np.save(self.MSName+"/Cnorm.npy",C)
             np.save(self.MSName+"/NMat.npy",NMat)
-        # invert C
-        if self.DiagOnly==True:
-            Weight=np.abs(np.diag(1/np.diag(C)))#**(-1)))
-            Weight[np.diag(np.diag(C))==0]=0
-        else:
-            if self.useInvSVD==True:
-                Weight=np.abs(invSVD(C))
-            else:
-                Weight=np.abs(np.linalg.inv(C))
-        # normalise weights matrix
-#        Weight=Weight/np.sum(Weight)
-        # save weights matrix
-        if self.SaveDataProducts==True:
             np.save(self.MSName+"/Weight.npy",Weight)
         return Weight
 
-    def SaveWeights(self,CovMatrix,diagonly=True):
+    def SaveWeights(self,WeightMatrix,diagonly=False):
 #        CovMatrix=CovMatrix/np.mean(CovMatrix)
        # open measurement set to store CTB_DATA
         ms=table(self.MSName,readonly=False)
@@ -225,25 +206,23 @@ class VarianceWeights:
         nbl=tarray.shape[0]/nt
         Wr=W.reshape((nt,nbl,nchan))
         if diagonly==True:
-            normW=np.diag(CovMatrix)/np.mean(CovMatrix)
+            W=np.diag(WeightMatrix)#/np.mean(np.diag(WeightCovMatrix))
         else:
-            normW=np.mean(CovMatrix,axis=0)/np.mean(CovMatrix)
-#        Wr=np.tile(normW,(nbl,nchan))
+            W=np.sum(WeightMatrix,axis=0)#/np.mean(np.sum(CovMatrix,axis=0))
+        normW=W/np.mean(W)
+
         for ibl in range(nbl):
             for ichan in range(nchan):
                 Wr[:,ibl,ichan]=normW
                 PrintProgress(ibl+ichan+1,nbl+nchan)
         W=Wr.reshape((nt*nbl,nchan))
-        # normalise
-#        W=np.copy(W/np.mean(W))
-        W=W/np.mean(np.mean(W,axis=0),axis=0)
-#        print "DEBUG", np.mean(W)
-        # store CTB_data in measurement set
+        # put in MS
         if ("COV_WEIGHT" not in ms.colnames()):
             desc=ms.getcoldesc("IMAGING_WEIGHT")
             desc["name"]="COV_WEIGHT"
             desc['comment']=desc['comment'].replace(" ","_")
             ms.addcols(desc)
+            print "Add COV_WEIGHT column to MS"
         ms.putcol("COV_WEIGHT",W)
         ms.close()
 
@@ -305,12 +284,14 @@ def PrintProgress(currentIter,maxIter):
 
 
 if __name__=="__main__":
-    DiagOnly=True#False
-    maxcorrtime=5
-    ntsol=300
+    start_time=time.time()
+    DiagOnly=False
+    maxcorrtime=60#"Full"
+    ntsol=15
     calchalfmat=True
     msname=sys.argv[1]
     print "Finding time-covariance weights for: %s"%msname
-    test=VarianceWeights(MSname=msname,imtype="",ntSol=ntsol,CalcHalfMat=calchalfmat,useInvSVD=True,DiagOnly=DiagOnly,SaveDataProducts=True,MaxCorrTime=maxcorrtime)
+    test=VarianceWeights(MSname=msname,imtype="",ntSol=ntsol,CalcHalfMat=calchalfmat,useInvSVD=False,DiagOnly=DiagOnly,SaveDataProducts=True,MaxCorrTime=maxcorrtime)
     weights=test.FindCovMat()
     test.SaveWeights(weights,diagonly=DiagOnly)
+    print "Total runtime: %f min"%((time.time()-start_time)/60.)
