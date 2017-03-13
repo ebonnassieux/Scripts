@@ -37,7 +37,8 @@ class VarianceWeights:
         # open antennas
         ants=table(ms.getkeyword("ANTENNA"))
         # open antenna tables
-        nAnt=len(ants.getcol("NAME"))
+        antnames=ants.getcol("NAME")
+        nAnt=len(antnames)
         A0=ms.getcol("ANTENNA1")
         A1=ms.getcol("ANTENNA2")
         Times=ms.getcol("TIME")
