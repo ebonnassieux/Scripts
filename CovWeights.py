@@ -65,7 +65,6 @@ class CovWeights:
         # build antenna coefficient array
         # TODO - MAKE COEFFARRAY INTO COMPLEX-VALUED WEIGHTS
         CoeffArray=np.zeros((nt,nAnt,nChan))#,dtype=np.complex64)
-
         # start calculating the weights
         print "Begin calculating antenna-based coefficients"
         for t_i in range(nt):
@@ -78,9 +77,11 @@ class CovWeights:
                 for k in range(nChan):
                     CoeffArray[t_i,ant,k]=np.sqrt(np.mean( np.abs(np.append(residuals[t_i,set1,k,:],residuals[t_i,set2,k,:])) ))
             PrintProgress(t_i,nt)
+
+
         return CoeffArray
                         
-    def SaveWeights(self,CoeffArray,colname="COVWEIGHT"):
+    def SaveWeights(self,CoeffArray,colname="COV_WEIGHT"):
         print "Begin saving the data"
         ms=table(self.MSName,readonly=False)
         # open antennas
@@ -94,13 +95,13 @@ class CovWeights:
         nt=tvalues.shape[0]
         nbl=tarray.shape[0]/nt
         nchan=darray.shape[1]
-        A0=ms.getcol("ANTENNA1").reshape((nt,nbl))
-        A1=ms.getcol("ANTENNA2").reshape((nt,nbl))
+        A0=np.array(ms.getcol("ANTENNA1").reshape((nt,nbl)))
+        A1=np.array(ms.getcol("ANTENNA2").reshape((nt,nbl)))
         if colname in ms.colnames():
             print "%s column already present; will overwrite"%colname
         else:
             W=np.ones((nt*nbl,nchan))
-            desc=ms.getcoldesc("WEIGHT")
+            desc=ms.getcoldesc("IMAGING_WEIGHT")
             desc["name"]=colname
             desc['comment']=desc['comment'].replace(" ","_")
             ms.addcols(desc)
@@ -109,11 +110,30 @@ class CovWeights:
         w=np.zeros((nt,nbl,nchan))
         ant1=np.arange(nAnt)
         print "Fill weights array"
-        for i in A0.shape[0]:
-            w[:,i,:]=CoeffArray[:,A0[i],]
-                w[:,indA0A1,:]=1./(CoeffArray[:,i,:]*CoeffArray[:,j,:])
-                print w[:,indA0A1,:].shape
-                stop
+        warnings.filterwarnings("ignore")
+        A0ind=A0[0,:]
+        A1ind=A1[0,:]
+        
+        # normalise coeffarray
+        #CoeffArray=CoeffArray/np.mean(CoeffArray)
+        
+        for i in range(nbl):
+            #for j in range(nchan):
+            w[:,i,:]=(CoeffArray[:,A0ind[i],:]*CoeffArray[:,A1ind[i],:])
+            PrintProgress(i,nbl)
+        w=w/np.mean(w)
+        # get rid of the stupidly low minima
+        warnings.filterwarnings("default")
+        w=w.reshape(nt*nbl,nchan)
+        w[np.isnan(w)]=0
+        w[np.isinf(w)]=0
+#        lo=np.sort(w[w!=0].flatten())[:100]
+        # flag away the most ridiculous near-zero weights
+#        w[w>np.std(w)*5]=np.std(w)*5
+        # normalise w
+        w=w/np.mean(w)
+        # save in weights column
+        ms.putcol(colname,w)
         ants.close()
         ms.close()
 
