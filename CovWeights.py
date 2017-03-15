@@ -64,7 +64,7 @@ class CovWeights:
         ant1=np.arange(nAnt)
         # build antenna coefficient array
         # TODO - MAKE COEFFARRAY INTO COMPLEX-VALUED WEIGHTS
-        CoeffArray=np.zeros((nt,nAnt,nChan))#,dtype=np.complex64)
+        CoeffArray=np.zeros((nt,nAnt))#,dtype=np.complex64)
         # start calculating the weights
         print "Begin calculating antenna-based coefficients"
         for t_i in range(nt):
@@ -74,14 +74,13 @@ class CovWeights:
                 set1=np.where(np.array(A0[t_i])==ant)
                 # set of vis for baselines ant_i-ant
                 set2=np.where(A1[t_i]==ant)
-                for k in range(nChan):
-                    CoeffArray[t_i,ant,k]=np.sqrt(np.mean( np.abs(np.append(residuals[t_i,set1,k,:],residuals[t_i,set2,k,:])) ))
+                CoeffArray[t_i,ant]=np.sqrt( np.std( np.abs(np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:]))))
             PrintProgress(t_i,nt)
 
 
         return CoeffArray
                         
-    def SaveWeights(self,CoeffArray,colname="COV_WEIGHT"):
+    def SaveWeights(self,CoeffArray,colname="COV_WEIGHT",AverageOverChannels=True,timefrac=0.005):
         print "Begin saving the data"
         ms=table(self.MSName,readonly=False)
         # open antennas
@@ -110,28 +109,41 @@ class CovWeights:
         w=np.zeros((nt,nbl,nchan))
         ant1=np.arange(nAnt)
         print "Fill weights array"
-        warnings.filterwarnings("ignore")
         A0ind=A0[0,:]
         A1ind=A1[0,:]
-        
-        # normalise coeffarray
-        #CoeffArray=CoeffArray/np.mean(CoeffArray)
-        
+
+        # clean up small values in coeffarray
+        #tpercent=int(nt*timefrac)
+        #for i in range(nAnt):
+        #    for j in range(nchan):
+        #        antvals=CoeffArray[:,i,j]
+        #        lowvals=np.sort(antvals[antvals!=0].flatten())[:tpercent]
+        #        thres=np.mean(lowvals)
+         #       CoeffArray[:,i,j]
+         #   PrintProgress(i,nAnt)
+
+
+        warnings.filterwarnings("ignore")
+        #if AverageOverChannels==1:
+        # average over channels
+        #CoeffArray=np.mean(CoeffArray,axis=2)
         for i in range(nbl):
-            #for j in range(nchan):
-            w[:,i,:]=(CoeffArray[:,A0ind[i],:]*CoeffArray[:,A1ind[i],:])
+            for j in range(nchan):
+                w[:,i,j]=1./(CoeffArray[:,A0ind[i]]*CoeffArray[:,A1ind[i]])
             PrintProgress(i,nbl)
-        w=w/np.mean(w)
-        # get rid of the stupidly low minima
+        #else:
+        #    for i in range(nbl):
+        #        w[:,i,:]=1./(CoeffArray[:,A0ind[i],:]*CoeffArray[:,A1ind[i],:])
+        #    PrintProgress(i,nbl)
         warnings.filterwarnings("default")
         w=w.reshape(nt*nbl,nchan)
         w[np.isnan(w)]=0
         w[np.isinf(w)]=0
+        w=w/np.mean(w)
 #        lo=np.sort(w[w!=0].flatten())[:100]
         # flag away the most ridiculous near-zero weights
 #        w[w>np.std(w)*5]=np.std(w)*5
-        # normalise w
-        w=w/np.mean(w)
+
         # save in weights column
         ms.putcol(colname,w)
         ants.close()
