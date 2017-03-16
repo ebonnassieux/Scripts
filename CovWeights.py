@@ -18,7 +18,7 @@ class CovWeights:
         self.SaveDataProducts=SaveDataProducts
         self.ntsol=ntsol
 
-    def FindWeights(self):
+    def FindWeights(self,tcorr=0):
         ms=table(self.MSName)
         # open antennas
         ants=table(ms.getkeyword("ANTENNA"))
@@ -67,15 +67,31 @@ class CovWeights:
         CoeffArray=np.zeros((nt,nAnt))#,dtype=np.complex64)
         # start calculating the weights
         print "Begin calculating antenna-based coefficients"
-        for t_i in range(nt):
-            # build weights for each antenna at time t_i
-            for ant in ant1:
-                # set of vis for baselines ant-ant_i
-                set1=np.where(np.array(A0[t_i])==ant)
-                # set of vis for baselines ant_i-ant
-                set2=np.where(A1[t_i]==ant)
-                CoeffArray[t_i,ant]=np.sqrt( np.std( np.abs(np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:]))))
-            PrintProgress(t_i,nt)
+        if tcorr>1:
+            print "find covariance between %i nearest times"%tcorr
+            for t_i in range(nt):
+                t_lo=max(0,t_i-tcorr)
+                t_hi=min(nt,t_i+tcorr)
+                # build weights for each antenna at time t_i
+                for ant in ant1:
+                    # set of vis for baselines ant-ant_i
+                    ThisBLresiduals=residuals[:,(A0[t_i]==ant)+(A0[t_i]==ant),:,:]
+                    temparray=np.zeros_like(ThisBLresiduals[0])
+                    for iter in range(t_lo,t_hi):
+                        temparray=temparray+ThisBLresiduals[t_i]*ThisBLresiduals[iter]
+                    CoeffArray[t_i,ant]=np.sqrt(np.mean(np.abs(temparray)))
+                PrintProgress(t_i,nt)
+        else:
+            print "Find variance-only weights"
+            for t_i in range(nt):
+                # build weights for each antenna at time t_i
+                for ant in ant1:
+                    # set of vis for baselines ant-ant_i
+                    set1=np.where(A0[t_i]==ant)[0]
+                    # set of vis for baselines ant_i-ant
+                    set2=np.where(A1[t_i]==ant)[0]
+                    CoeffArray[t_i,ant]=np.sqrt( np.std( np.abs(np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:]))))
+                PrintProgress(t_i,nt)
 
 
         return CoeffArray
@@ -164,6 +180,6 @@ if __name__=="__main__":
     print "Finding time-covariance weights for: %s"%msname
     covweights=CovWeights(MSName=msname)
 #    covweights.AddWeightsCol()
-    coefficients=covweights.FindWeights()
-    covweights.SaveWeights(coefficients)
+    coefficients=covweights.FindWeights(tcorr=0)
+    covweights.SaveWeights(coefficients,colname="VAR_WEIGHT")
     print "Total runtime: %f min"%((time.time()-start_time)/60.)
