@@ -76,8 +76,8 @@ if __name__=="__main__":
     print "RA  : %s"%RA
     print "Dec : %s"%Dec
     vmin=-10  # in units of sigma
-    vmax= 4xs0  # in units of sigma 
+    vmax= 40  # in units of sigma 
 
     # make some control loop to say that RA, Dec need to be given in hexadecimal
     
-    MakeCutout(fitsfiles,RA,Dec,xDegrees=0.1,yDegrees=0.1,NSigmaVmin=vmin,NSigmaVmax=vmax,outname=None)
+    MakeCutout(fitsfiles,RA,Dec,xDegrees=4,yDegrees=4,NSigmaVmin=vmin,NSigmaVmax=vmax,outname=None)

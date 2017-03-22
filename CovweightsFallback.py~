@@ -66,7 +66,7 @@ class CovWeights:
         residuals=np.zeros_like(rmsarray,dtype=np.complex64)
         rmsarray[:,:,:,0]=residualdata[:,:,:,1]
         rmsarray[:,:,:,1]=residualdata[:,:,:,2]
-        # make proper residual array
+        # make propoer residual array
         residuals[:,:,:,0]=residualdata[:,:,:,0]
         residuals[:,:,:,1]=residualdata[:,:,:,3]
         # antenna coefficient array
@@ -82,15 +82,10 @@ class CovWeights:
                 # build weights for each antenna at time t_i
                 for ant in ant1:
                     # set of vis for baselines ant-ant_i
-                    #ThisBLresiduals=residuals[:,(A0[t_i]==ant)+(A0[t_i]==ant),:,:]
-                    set1=np.where(A0[t_i]==ant)[0]
-                    set2=np.where(A1[t_i]==ant)[0]
-                    ThisBLresiduals=np.append(residuals[0,set1,:,:],residuals[0,set2,:,:])
-                    temparray=np.zeros_like(ThisBLresiduals)
-                    for iterator in range(t_lo,t_hi):
-                        #temparray=temparray+ThisBLresiduals[t_i]*ThisBLresiduals[iterator]
-                        # this is inexplicably much faster....
-                        temparray=temparray+np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:])*np.append(residuals[iterator,set1,:,:],residuals[iterator,set2,:,:])
+                    ThisBLresiduals=residuals[:,(A0[t_i]==ant)+(A0[t_i]==ant),:,:]
+                    temparray=np.zeros_like(ThisBLresiduals[0])
+                    for iter in range(t_lo,t_hi):
+                        temparray=temparray+ThisBLresiduals[t_i]*ThisBLresiduals[iter]
                     CoeffArray[t_i,ant]=np.sqrt(np.mean(np.abs(temparray)))
                 PrintProgress(t_i,nt)
         else:
@@ -104,6 +99,11 @@ class CovWeights:
                     set2=np.where(A1[t_i]==ant)[0]
                     CoeffArray[t_i,ant]=np.sqrt( np.std( np.abs(np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:]))))
                 PrintProgress(t_i,nt)
+
+        #for i in range(nAnt):
+        #    thres=0.5*np.median(CoeffArray[:,i])
+        #    CoeffArray[CoeffArray[:,i]<thres,i]=thres
+
 
         return CoeffArray
                         
@@ -139,16 +139,38 @@ class CovWeights:
         A0ind=A0[0,:]
         A1ind=A1[0,:]
 
+        # clean up small values in coeffarray
+        #tpercent=int(nt*timefrac)
+        #for i in range(nAnt):
+        #    for j in range(nchan):
+        #        antvals=CoeffArray[:,i,j]
+        #        lowvals=np.sort(antvals[antvals!=0].flatten())[:tpercent]
+        #        thres=np.mean(lowvals)
+         #       CoeffArray[:,i,j]
+         #   PrintProgress(i,nAnt)
+
+
         warnings.filterwarnings("ignore")
+        #if AverageOverChannels==1:
+        # average over channels
+        #CoeffArray=np.mean(CoeffArray,axis=2)
         for i in range(nbl):
             for j in range(nchan):
-                w[:,i,j]=1./(CoeffArray[:,A0ind[i]]*CoeffArray[:,A1ind[j]] + 0.01)
+                w[:,i,j]=1./(CoeffArray[:,A0ind[i]]*CoeffArray[:,A1ind[j]])
             PrintProgress(i,nbl)
+        #else:
+        #    for i in range(nbl):
+        #        w[:,i,:]=1./(CoeffArray[:,A0ind[i],:]*CoeffArray[:,A1ind[i],:])
+        #    PrintProgress(i,nbl)
         warnings.filterwarnings("default")
         w=w.reshape(nt*nbl,nchan)
         w[np.isnan(w)]=0
         w[np.isinf(w)]=0
         w=w/np.mean(w)
+#        lo=np.sort(w[w!=0].flatten())[:100]
+        # flag away the most ridiculous near-zero weights
+#        w[w>np.std(w)*5]=np.std(w)*5
+
         # save in weights column
         ms.putcol(colname,w)
         ants.close()
@@ -168,6 +190,7 @@ if __name__=="__main__":
     msname=sys.argv[1]
     print "Finding time-covariance weights for: %s"%msname
     covweights=CovWeights(MSName=msname)
+#    covweights.AddWeightsCol()
     coefficients=covweights.FindWeights(tcorr=0)
     covweights.SaveWeights(coefficients,colname="VAR_WEIGHT")
     print "Total runtime: %f min"%((time.time()-start_time)/60.)
