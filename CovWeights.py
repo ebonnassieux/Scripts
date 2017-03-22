@@ -16,9 +16,11 @@ class CovWeights:
             self.MSName=MSName
         self.MaxCorrTime=MaxCorrTime
         self.SaveDataProducts=SaveDataProducts
-        self.ntsol=ntsol
+        self.ntSol=ntsol
 
     def FindWeights(self,tcorr=0):
+        if tcorr!=0:
+            tcorr=tcorr*self.ntSol
         ms=table(self.MSName)
         # open antennas
         ants=table(ms.getkeyword("ANTENNA"))
@@ -58,6 +60,12 @@ class CovWeights:
         nt=residualdata.shape[0]/nbl
         # reshape antennas and data columns
         residualdata=residualdata.reshape((nt,nbl,nChan,nPola))
+        # average residual data within calibration cells
+        if self.ntSol>1:
+            tspill=nt%self.ntSol
+            nt1=nt+self.ntSol-tspill
+            for i in range(nt1/self.ntSol):
+                residualdata[i*self.ntSol:(i+1)*self.ntSol,:,:,:]=np.mean(residualdata[i*self.ntSol:(i+1)*self.ntSol,:,:,:],axis=0)
         A0=A0.reshape((nt,nbl))
         A1=A1.reshape((nt,nbl))
         ant1=np.arange(nAnt)
@@ -90,7 +98,7 @@ class CovWeights:
                     for iterator in range(t_lo,t_hi):
                         #temparray=temparray+ThisBLresiduals[t_i]*ThisBLresiduals[iterator]
                         # this is inexplicably much faster....
-                        temparray=temparray+np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:])*np.append(residuals[iterator,set1,:,:],residuals[iterator,set2,:,:])
+                        temparray=temparray+np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:])*np.append(residuals[iterator,set1,:,:],residuals[iterator,set2,:,:]).conj()
                     CoeffArray[t_i,ant]=np.sqrt(np.mean(np.abs(temparray)))
                 PrintProgress(t_i,nt)
         else:
@@ -104,6 +112,11 @@ class CovWeights:
                     set2=np.where(A1[t_i]==ant)[0]
                     CoeffArray[t_i,ant]=np.sqrt( np.std( np.abs(np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:]))))
                 PrintProgress(t_i,nt)
+
+        for i in range(nAnt):
+            thres=0.4*np.median(CoeffArray[:,i])
+            CoeffArray[CoeffArray[:,i]<thres,i]=thres
+
 
         return CoeffArray
                         
@@ -142,7 +155,8 @@ class CovWeights:
         warnings.filterwarnings("ignore")
         for i in range(nbl):
             for j in range(nchan):
-                w[:,i,j]=1./(CoeffArray[:,A0ind[i]]*CoeffArray[:,A1ind[j]] + 0.01)
+                #w[:,i,j]=1./(CoeffArray[:,A0ind[i]]*CoeffArray[:,A1ind[j]] + 0.01)
+                w[:,i,j]=1./(CoeffArray[:,A0ind[i]]**2 + CoeffArray[:,A1ind[j]]**2 + 0.01)
             PrintProgress(i,nbl)
         warnings.filterwarnings("default")
         w=w.reshape(nt*nbl,nchan)
@@ -164,10 +178,10 @@ def PrintProgress(currentIter,maxIter):
 ### if program is called as main ###
 if __name__=="__main__":
     start_time=time.time()
-    ntsol=1
+    ntsol=5
     msname=sys.argv[1]
     print "Finding time-covariance weights for: %s"%msname
-    covweights=CovWeights(MSName=msname)
+    covweights=CovWeights(MSName=msname,ntsol=ntsol)
     coefficients=covweights.FindWeights(tcorr=0)
     covweights.SaveWeights(coefficients,colname="VAR_WEIGHT")
     print "Total runtime: %f min"%((time.time()-start_time)/60.)
