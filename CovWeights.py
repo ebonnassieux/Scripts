@@ -45,14 +45,14 @@ class CovWeights:
             ms.addcols(desc)
             ms.putcol("RESIDUAL_DATA",ms.getcol("CORRECTED_DATA"))
         # bootes test; true flags are in different dir
-        flags=ms.getcol("FLAG")#np.load(self.MSName+"/Flagging.npy")
+        flags=ms.getcol("FLAG")
+        #flags=np.load(self.MSName+"/Flagging.npy")
         print "Please ensure that RESIDUAL_DATA or CORRECTED_DATA contains residual visibilities from complete skymodel subtraction, and PREDICTED_VIS contains the uncalibrated flux."
         residualdata=(ms.getcol("RESIDUAL_DATA")*norm)
         flags=ms.getcol("FLAG")
         # apply flags to data
         residualdata[flags==1]=0
         # exit files gracefully
-        ms.close()
         ants.close()
         # initialise
         nChan=residualdata.shape[1]
@@ -70,13 +70,15 @@ class CovWeights:
         A1=A1.reshape((nt,nbl))
         ant1=np.arange(nAnt)
         # make rms array
+        darray=ms.getcol("CORRECTED_DATA").reshape((nt,nbl,nChan,nPola))
+        ms.close()
         rmsarray=np.zeros((nt,nbl,nChan,2),dtype=np.complex64)
         residuals=np.zeros_like(rmsarray,dtype=np.complex64)
-        rmsarray[:,:,:,0]=residualdata[:,:,:,1]
-        rmsarray[:,:,:,1]=residualdata[:,:,:,2]
+        rmsarray[:,:,:,0]=darray[:,:,:,1]
+        rmsarray[:,:,:,1]=darray[:,:,:,2]
         # make proper residual array
-        residuals[:,:,:,0]=residualdata[:,:,:,0]
-        residuals[:,:,:,1]=residualdata[:,:,:,3]
+        residuals[:,:,:,0]=darray[:,:,:,0]#residualdata[:,:,:,0]
+        residuals[:,:,:,1]=darray[:,:,:,3]#residualdata[:,:,:,3]
         # antenna coefficient array
         # TODO - MAKE COEFFARRAY INTO COMPLEX-VALUED WEIGHTS
         CoeffArray=np.zeros((nt,nAnt))#,dtype=np.complex64)
@@ -102,6 +104,7 @@ class CovWeights:
                     CoeffArray[t_i,ant]=np.sqrt(np.mean(np.abs(temparray)))
                 PrintProgress(t_i,nt)
         else:
+            warnings.filterwarnings("ignore")
             print "Find variance-only weights"
             for t_i in range(nt):
                 # build weights for each antenna at time t_i
@@ -110,13 +113,15 @@ class CovWeights:
                     set1=np.where(A0[t_i]==ant)[0]
                     # set of vis for baselines ant_i-ant
                     set2=np.where(A1[t_i]==ant)[0]
-                    CoeffArray[t_i,ant]=np.sqrt( np.std( np.abs(np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:]))))
+                    CoeffArray[t_i,ant] = np.sqrt(np.mean(np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:])*np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:]).conj()))
+#                    CoeffArray[t_i,ant] = np.sqrt( np.std( (np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:])))**2  )
+#                                                  - np.mean( np.abs(np.append(rmsarray[t_i,set1,:,:], rmsarray[t_i,set2,:,:]))) )
                 PrintProgress(t_i,nt)
 
+        warnings.filterwarnings("default")
         for i in range(nAnt):
-            thres=0.4*np.median(CoeffArray[:,i])
+            thres=0.25*np.median(CoeffArray[:,i])
             CoeffArray[CoeffArray[:,i]<thres,i]=thres
-
 
         return CoeffArray
                         
@@ -183,5 +188,5 @@ if __name__=="__main__":
     print "Finding time-covariance weights for: %s"%msname
     covweights=CovWeights(MSName=msname,ntsol=ntsol)
     coefficients=covweights.FindWeights(tcorr=0)
-    covweights.SaveWeights(coefficients,colname="VAR_WEIGHT")
+    covweights.SaveWeights(coefficients,colname="COV_WEIGHT")
     print "Total runtime: %f min"%((time.time()-start_time)/60.)
