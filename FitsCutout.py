@@ -75,8 +75,8 @@ if __name__=="__main__":
     Dec=sys.argv[-1]
     print "RA  : %s"%RA
     print "Dec : %s"%Dec
-    vmin=-10  # in units of sigma
-    vmax= 40  # in units of sigma 
+    vmin=-1  # in units of sigma
+    vmax= 1.2  # in units of sigma 
 
     # make some control loop to say that RA, Dec need to be given in hexadecimal
     

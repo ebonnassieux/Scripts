@@ -6,7 +6,7 @@ from numpy import ma
 import sys
 import warnings
 import time
-
+import math
 
 class CovWeights:
     def __init__(self,MSName,ntsol=1,MaxCorrTime=0,SaveDataProducts=0):
@@ -19,8 +19,8 @@ class CovWeights:
         self.ntSol=ntsol
 
     def FindWeights(self,tcorr=0):
-        if tcorr!=0:
-            tcorr=tcorr*self.ntSol
+        #if tcorr!=0:
+        #    tcorr=tcorr*self.ntSol
         ms=table(self.MSName)
         # open antennas
         ants=table(ms.getkeyword("ANTENNA"))
@@ -86,11 +86,11 @@ class CovWeights:
         print "Begin calculating antenna-based coefficients"
         if tcorr>1:
             print "find covariance between %i nearest times"%tcorr
-            for t_i in range(nt):
-                t_lo=max(0,t_i-tcorr)
-                t_hi=min(nt,t_i+tcorr)
-                # build weights for each antenna at time t_i
-                for ant in ant1:
+            for ant in ant1:
+                for t_i in range(nt):
+                    t_lo=max(0,t_i-tcorr)
+                    t_hi=min(nt,t_i+tcorr)
+                    cmat=np.zeros((tcorr,tcorr))
                     # set of vis for baselines ant-ant_i
                     #ThisBLresiduals=residuals[:,(A0[t_i]==ant)+(A0[t_i]==ant),:,:]
                     set1=np.where(A0[t_i]==ant)[0]
@@ -103,7 +103,7 @@ class CovWeights:
                         temparray=temparray+np.abs(np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:])*np.append(residuals[iterator,set1,:,:],residuals[iterator,set2,:,:]).conj())
                     temparray=temparray-np.std( (np.append(rmsarray[t_i,set1,:,:], rmsarray[t_i,set2,:,:])))
                     CoeffArray[t_i,ant]=np.sqrt(np.mean(np.abs(temparray)))
-                PrintProgress(t_i,nt)
+                PrintProgress(ant,max(ant1))
         else:
             warnings.filterwarnings("ignore")
             print "Find variance-only weights"
@@ -122,10 +122,12 @@ class CovWeights:
         for i in range(nAnt):
             thres=0.25*np.median(CoeffArray[:,i])
             CoeffArray[CoeffArray[:,i]<thres,i]=thres
-
+        coeffFilename="CoeffArray.%i.npy"%tcorr
+        print "Save coefficient array as %s."%coeffFilename
+        np.save(coeffFilename,CoeffArray)
         return CoeffArray
                         
-    def SaveWeights(self,CoeffArray,colname="COV_WEIGHT",AverageOverChannels=True,timefrac=0.005):
+    def SaveWeights(self,CoeffArray,colname="COV_WEIGHT",AverageOverChannels=True,tcorr=0):
         print "Begin saving the data"
         ms=table(self.MSName,readonly=False)
         # open antennas
@@ -156,17 +158,35 @@ class CovWeights:
         print "Fill weights array"
         A0ind=A0[0,:]
         A1ind=A1[0,:]
-
+        
+        #if tcorr<2:
         warnings.filterwarnings("ignore")
         for i in range(nbl):
             for j in range(nchan):
-                w[:,i,j]=1./(CoeffArray[:,A0ind[i]]*CoeffArray[:,A1ind[j]] + 0.01)
-                #w[:,i,j]=1./(CoeffArray[:,A0ind[i]]**2 + CoeffArray[:,A1ind[j]]**2 + 0.01)
+                w[:,i,j]=1./(CoeffArray[:,A0ind[i]]*CoeffArray[:,A1ind[i]] + 0.01)
+                #w[:,i,j]=1./(CoeffArray[:,A0ind[i]]**2 + CoeffArray[:,A1ind[i]]**2 + 0.01)
             PrintProgress(i,nbl)
         warnings.filterwarnings("default")
         w=w.reshape(nt*nbl,nchan)
+        #else:
+        #    #concatenate coeffarray
+        #    if self.ntSol>1:
+        #        tspill=nt%self.ntSol
+        #        nt1=np.int(math.ceil(1.*nt/self.ntSol))
+        #        CoeffArray1=np.zeros((nt1,CoeffArray.shape[1]))
+        #        for i in range(nt1):
+        #            uplim=min((i+1)*self.ntSol,nt)
+        #            CoeffArray1[i,:]=np.mean(CoeffArray[i*self.ntSol:uplim,:],axis=0)
+        #        # start nbl loop
+        #        for i in range(nbl):
+        #            mat1=CoeffArray1[:,A0ind[i]].reshape((nt1,1))
+        #            mat2=CoeffArray1[:,A1ind[i]].reshape((1,nt1))
+        #            cmat=np.dot(mat1,mat2)
+        #            stop
+
         w[np.isnan(w)]=0
         w[np.isinf(w)]=0
+        # normalise
         w=w/np.mean(w)
         # save in weights column
         ms.putcol(colname,w)
@@ -187,6 +207,6 @@ if __name__=="__main__":
     msname=sys.argv[1]
     print "Finding time-covariance weights for: %s"%msname
     covweights=CovWeights(MSName=msname,ntsol=ntsol)
-    coefficients=covweights.FindWeights(tcorr=125)
-    covweights.SaveWeights(coefficients,colname="COV_WEIGHT")
+    coefficients=covweights.FindWeights()
+    covweights.SaveWeights(coefficients,colname="COV_WEIGHT",tcorr=25)
     print "Total runtime: %f min"%((time.time()-start_time)/60.)
