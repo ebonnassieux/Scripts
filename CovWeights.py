@@ -85,25 +85,76 @@ class CovWeights:
         # start calculating the weights
         print "Begin calculating antenna-based coefficients"
         if tcorr>1:
+
+            ### SAVE DATA ###
+
+            colname="COV_WEIGHT"
+            ms=table(self.MSName,readonly=False)
+            # open antennas
+            ants=table(ms.getkeyword("ANTENNA"))
+            # open antenna tables
+            antnames=ants.getcol("NAME")
+            nAnt=len(antnames)
+            tarray=ms.getcol("TIME")
+            darray=ms.getcol("DATA")
+            tvalues=np.array(sorted(list(set(tarray))))
+            nt=tvalues.shape[0]
+            nbl=tarray.shape[0]/nt
+            nchan=darray.shape[1]
+            A0=np.array(ms.getcol("ANTENNA1").reshape((nt,nbl)))
+            A1=np.array(ms.getcol("ANTENNA2").reshape((nt,nbl)))
+            if colname in ms.colnames():
+                print "%s column already present; will overwrite"%colname
+            else:
+                W=np.ones((nt*nbl,nchan))
+                desc=ms.getcoldesc("IMAGING_WEIGHT")
+                desc["name"]=colname
+                desc['comment']=desc['comment'].replace(" ","_")
+                ms.addcols(desc)
+                ms.putcol(colname,W)
+            # create weight array
+            w=np.zeros((nt,nbl,nchan))
+            ant1=np.arange(nAnt)
+            print "Fill weights array"
+            A0ind=A0[0,:]
+            A1ind=A1[0,:]
+
+            ### WEIGHT COL CREATED ###
+
+            warnings.filterwarnings("ignore")
             print "find covariance between %i nearest times"%tcorr
-            for ant in ant1:
-                for t_i in range(nt):
-                    t_lo=max(0,t_i-tcorr)
-                    t_hi=min(nt,t_i+tcorr)
-                    cmat=np.zeros((tcorr,tcorr))
-                    # set of vis for baselines ant-ant_i
-                    #ThisBLresiduals=residuals[:,(A0[t_i]==ant)+(A0[t_i]==ant),:,:]
-                    set1=np.where(A0[t_i]==ant)[0]
-                    set2=np.where(A1[t_i]==ant)[0]
-                    ThisBLresiduals=np.append(residuals[0,set1,:,:],residuals[0,set2,:,:])
-                    temparray=np.zeros_like(ThisBLresiduals)
-                    for iterator in range(t_lo,t_hi):
-                        #temparray=temparray+ThisBLresiduals[t_i]*ThisBLresiduals[iterator]
-                        # this is inexplicably much faster....
-                        temparray=temparray+np.abs(np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:])*np.append(residuals[iterator,set1,:,:],residuals[iterator,set2,:,:]).conj())
-                    temparray=temparray-np.std( (np.append(rmsarray[t_i,set1,:,:], rmsarray[t_i,set2,:,:])))
-                    CoeffArray[t_i,ant]=np.sqrt(np.mean(np.abs(temparray)))
-                PrintProgress(ant,max(ant1))
+            for ant1 in A0:
+                for ant2 in A1:
+                    line=0
+                    #print "Antenna %i of %i"%(ant,nAnt)
+                    for t_i in range(nt):
+                        t_lo=max(0,t_i-tcorr-1)
+                        t_hi=min(nt,t_i+tcorr)
+                        cmat=np.zeros((t_hi-t_lo,t_hi-t_lo))
+                        # set of vis for baselines ant-ant_i
+                        #ThisBLresiduals=residuals[:,(A0[t_i]==ant)+(A0[t_i]==ant),:,:]
+                        set1=np.where(A0[t_i]==ant1)[0]
+                        set2=np.where(A1[t_i]==ant2)[0]
+                        ThisBLresiduals=np.append(residuals[0,set1,:,:],residuals[0,set2,:,:])
+                        # make covmat
+                        for iterator1 in range(t_hi-t_lo):
+                            for iterator2 in range(t_hi-t_lo):
+                                cmat[iterator1,iterator2]= np.mean(residuals[iterator1*self.ntSol,set1,:,:]*residuals[iterator2*self.ntSol,set2,:,:].conj())#*\
+#                                                            np.append(residuals[iterator2*self.ntSol,set1,:,:],residuals[iterator2*self.ntSol,set2,:,:]).conj())
+                                if iterator1==iterator2:
+                                    cmat[iterator1,iterator2]=cmat[iterator1,iterator2]-np.std( (np.append(rmsarray[iterator1,set1,:,:], rmsarray[iterator2,set2,:,:])))
+                        # invert covmat
+                        invcovmat=np.linalg.inv(cmat)
+                        for j in range(nchan):
+                            w[t_i,A0ind[i]*A1ind[i],j]=1/np.abs(np.mean(invcovmat[line]))
+                        #w[t_i,ant]=np.sqrt(np.abs(np.mean(invcovmat[line])))
+                        #print "saving line %i ; "%line,t_hi,t_lo
+                        if t_i-tcorr<1:
+                            line=line+1
+                        elif t_hi==0:
+                            line=line-1
+                PrintProgress(ant1,nAnt)
+            warnings.filterwarnings("default")
         else:
             warnings.filterwarnings("ignore")
             print "Find variance-only weights"
@@ -111,7 +162,7 @@ class CovWeights:
                 # build weights for each antenna at time t_i
                 for ant in ant1:
                     # set of vis for baselines ant-ant_i
-                    set1=np.where(A0[t_i]==ant)[0]
+                    set1=np.where(A0[t_i]==ant1)[0]
                     # set of vis for baselines ant_i-ant
                     set2=np.where(A1[t_i]==ant)[0]
                     CoeffArray[t_i,ant] = np.sqrt(np.mean(np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:])*np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:]).conj())\
@@ -127,7 +178,7 @@ class CovWeights:
         np.save(coeffFilename,CoeffArray)
         return CoeffArray
                         
-    def SaveWeights(self,CoeffArray,colname="COV_WEIGHT",AverageOverChannels=True,tcorr=0):
+    def SaveWeights(self,CoeffArray,colname="VAR_WEIGHT",AverageOverChannels=True,tcorr=0):
         print "Begin saving the data"
         ms=table(self.MSName,readonly=False)
         # open antennas
@@ -204,9 +255,10 @@ def PrintProgress(currentIter,maxIter):
 if __name__=="__main__":
     start_time=time.time()
     ntsol=7
+    corrtime=5
     msname=sys.argv[1]
     print "Finding time-covariance weights for: %s"%msname
     covweights=CovWeights(MSName=msname,ntsol=ntsol)
-    coefficients=covweights.FindWeights()
-    covweights.SaveWeights(coefficients,colname="COV_WEIGHT",tcorr=25)
+    coefficients=covweights.FindWeights(tcorr=corrtime)
+    #covweights.SaveWeights(coefficients,colname="VAR_WEIGHT",tcorr=corrtime)
     print "Total runtime: %f min"%((time.time()-start_time)/60.)
