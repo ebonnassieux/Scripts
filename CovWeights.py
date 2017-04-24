@@ -34,10 +34,10 @@ class CovWeights:
         nbl=np.where(Times==Times[0])[0].size
         warnings.filterwarnings("ignore")
         # TODO: find better name
-        norm=1/ms.getcol("PREDICTED_VIS")
+        #norm=1/ms.getcol("PREDICTED_VIS")
         warnings.filterwarnings("default")
         # get rid of NaN
-        norm[np.isnan(norm)]=0
+        #norm[np.isnan(norm)]=0
         if "RESIDUAL_DATA" not in ms.colnames():
             desc=ms.getcoldesc("CORRECTED_DATA")
             desc["name"]="RESIDUAL_DATA"
@@ -48,7 +48,8 @@ class CovWeights:
         flags=ms.getcol("FLAG")
         #flags=np.load(self.MSName+"/Flagging.npy")
         print "Please ensure that RESIDUAL_DATA or CORRECTED_DATA contains residual visibilities from complete skymodel subtraction, and PREDICTED_VIS contains the uncalibrated flux."
-        residualdata=(ms.getcol("RESIDUAL_DATA")*norm)
+        residualdata=ms.getcol("RESIDUAL_DATA")#*norm
+        
         flags=ms.getcol("FLAG")
         # apply flags to data
         residualdata[flags==1]=0
@@ -88,7 +89,7 @@ class CovWeights:
 
             ### SAVE DATA ###
 
-            colname="COV_WEIGHT"
+            colname="FULL_WEIGHT"
             ms=table(self.MSName,readonly=False)
             # open antennas
             ants=table(ms.getkeyword("ANTENNA"))
@@ -114,6 +115,7 @@ class CovWeights:
                 ms.putcol(colname,W)
             # create weight array
             w=np.zeros((nt,nbl,nchan))
+            np.save("fullw.npy",w)
             ant1=np.arange(nAnt)
             print "Fill weights array"
             A0ind=A0[0,:]
@@ -123,38 +125,64 @@ class CovWeights:
 
             warnings.filterwarnings("ignore")
             print "find covariance between %i nearest times"%tcorr
-            for ant1 in A0:
-                for ant2 in A1:
+            ### debug ###
+            for ant1 in range(nAnt):
+                msg="Ant1: %i/%i Progress: "%(ant1+1,nAnt+1)
+                for ant2 in range(ant1+1,nAnt):
                     line=0
+                    #indA0A1=np.where(((A0==ant1)&(A1==ant2))|((A0==ant2)&(A1==ant1)))[1]
+                    #ThisBLresiduals=residuals[:,indA0A1,:,:]
+                    #set1=np.where(A0[t_i]==ant1)[0]
+                    #set2=np.where(A1[t_i]==ant2)[0]
+                    #msg="Ant1: %i/%i Ant2: %i/%i Progress: "%(ant1+1,nAnt+1,ant2+1,nAnt-ant1+1)
                     #print "Antenna %i of %i"%(ant,nAnt)
                     for t_i in range(nt):
+                        #set1=A0[t_i]==ant1
+                        #set2=A1[t_i]==ant2
+                        blset=(A0[t_i]==ant1)*(A1[t_i]==ant2)#set1*set2
+                        #set1=np.where(A0[t_i]==ant1)[0]
+                        #set2=np.where(A1[t_i]==ant2)[0]
                         t_lo=max(0,t_i-tcorr-1)
                         t_hi=min(nt,t_i+tcorr)
                         cmat=np.zeros((t_hi-t_lo,t_hi-t_lo))
                         # set of vis for baselines ant-ant_i
+                        #set1=np.where(A0[t_i]==ant1)[0]
+                        #set2=np.where(A1[t_i]==ant1)[0]
                         #ThisBLresiduals=residuals[:,(A0[t_i]==ant)+(A0[t_i]==ant),:,:]
-                        set1=np.where(A0[t_i]==ant1)[0]
-                        set2=np.where(A1[t_i]==ant2)[0]
-                        ThisBLresiduals=np.append(residuals[0,set1,:,:],residuals[0,set2,:,:])
                         # make covmat
                         for iterator1 in range(t_hi-t_lo):
                             for iterator2 in range(t_hi-t_lo):
-                                cmat[iterator1,iterator2]= np.mean(residuals[iterator1*self.ntSol,set1,:,:]*residuals[iterator2*self.ntSol,set2,:,:].conj())#*\
+                                cmat[iterator1,iterator2]= np.mean(residuals[iterator1*self.ntSol,blset,:,:]*residuals[iterator2*self.ntSol,blset,:,:].conj())
+#                                cmat[iterator1,iterator2]= np.mean(np.append(residuals[iterator1*self.ntSol,set1,:,:],residuals[iterator1*self.ntSol,set2,:,:])*\
+#                                                                   np.append(residuals[iterator2*self.ntSol,set1,:,:],residuals[iterator2*self.ntSol,set2,:,:]).conj())
 #                                                            np.append(residuals[iterator2*self.ntSol,set1,:,:],residuals[iterator2*self.ntSol,set2,:,:]).conj())
                                 if iterator1==iterator2:
-                                    cmat[iterator1,iterator2]=cmat[iterator1,iterator2]-np.std( (np.append(rmsarray[iterator1,set1,:,:], rmsarray[iterator2,set2,:,:])))
+                                    cmat[iterator1,iterator2]=cmat[iterator1,iterator2]-np.std(rmsarray[iterator1,blset,:,:])
                         # invert covmat
-                        invcovmat=np.linalg.inv(cmat)
+                        invcovmat=invSVD(cmat)
+                        #invcovmat=np.linalg.inv(cmat)
                         for j in range(nchan):
-                            w[t_i,A0ind[i]*A1ind[i],j]=1/np.abs(np.mean(invcovmat[line]))
+                            # this is what is going on in current run
+                            w[t_i,blset,j]=1/np.max(np.abs(np.mean(invcovmat[line])),0.01)
+                            # do a clip later instead
+                            #w[t_i,blset,j]=1/(np.abs(np.mean(invcovmat[line]))
+                        #    w[t_i,A0ind[i]*A1ind[i],j]=1/np.abs(np.mean(invcovmat[line]))
                         #w[t_i,ant]=np.sqrt(np.abs(np.mean(invcovmat[line])))
                         #print "saving line %i ; "%line,t_hi,t_lo
                         if t_i-tcorr<1:
                             line=line+1
                         elif t_hi==0:
                             line=line-1
-                PrintProgress(ant1,nAnt)
+                        #msg="Ant1: %i/%i Ant2: %i/%i Progress: "%(ant1,np.max(A0),ant2,np.max(A1))
+                    PrintProgress(ant2-ant1,nAnt-ant1,msg=msg)
             warnings.filterwarnings("default")
+            # perform clip
+            thres=0.1*np.median(w)
+            w[w<thres]=thres
+            w=w.reshape((nt*nbl,nchan))/npmean(w)
+            np.save("fucksake.npy",w)
+            ms.putcol(colname,w)
+            ms.close()
         else:
             warnings.filterwarnings("ignore")
             print "Find variance-only weights"
@@ -245,11 +273,24 @@ class CovWeights:
         ms.close()
 
 ### auxiliary functions ###
-def PrintProgress(currentIter,maxIter):
+def PrintProgress(currentIter,maxIter,msg=""):
     sys.stdout.flush()
-    sys.stdout.write("\rProgress: %5.1f %% "%(100*(currentIter+1.)/maxIter))
+    if msg=="":
+        msg="Progress:"
+    sys.stdout.write("\r%s %5.1f %% "%(msg,100*(currentIter+1.)/maxIter))
     if currentIter==(maxIter-1):
         sys.stdout.write("\n")
+def invSVD(A):
+    u,s,v=np.linalg.svd(A)
+    #test=np.allclose(A,np.dot(u,np.dot(np.diag(s),v)))
+    #print "invSVD validity:",test
+    # limit impact of small values
+    s[s<1.e-6*s.max()]=1.e-6*s.max()
+    ssq=np.abs((1./s))
+    # rebuild matrix
+    Asq=np.dot(v,np.dot(np.diag(ssq),np.conj(u)))
+    v0=v.T*ssq.reshape(1,ssq.size)
+    return Asq
 
 ### if program is called as main ###
 if __name__=="__main__":

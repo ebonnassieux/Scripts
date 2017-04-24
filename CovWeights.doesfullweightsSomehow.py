@@ -85,7 +85,6 @@ class CovWeights:
         # start calculating the weights
         print "Begin calculating antenna-based coefficients"
         if tcorr>1:
-
             ### SAVE DATA ###
 
             colname="COV_WEIGHT"
@@ -165,15 +164,16 @@ class CovWeights:
                     set1=np.where(A0[t_i]==ant1)[0]
                     # set of vis for baselines ant_i-ant
                     set2=np.where(A1[t_i]==ant)[0]
-                    CoeffArray[t_i,ant] = np.sqrt(np.mean(np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:])*np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:]).conj())\
+#                    CoeffArray[t_i,ant] = np.sqrt(np.mean(np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:])*np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:]).conj())\
+                    CoeffArray[t_i,ant] = (np.mean(np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:])*np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:]).conj())\
 #                    CoeffArray[t_i,ant] = np.sqrt( np.std( (np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:])))**2  )
-                                                  - np.std( (np.append(rmsarray[t_i,set1,:,:], rmsarray[t_i,set2,:,:]))) )
+                                           - np.std( (np.append(rmsarray[t_i,set1,:,:], rmsarray[t_i,set2,:,:]))) )
                 PrintProgress(t_i,nt)
         warnings.filterwarnings("default")
         for i in range(nAnt):
             thres=0.25*np.median(CoeffArray[:,i])
             CoeffArray[CoeffArray[:,i]<thres,i]=thres
-        coeffFilename="CoeffArray.%i.npy"%tcorr
+        coeffFilename="%s/CoeffArray.%i.npy"%(msname,tcorr)
         print "Save coefficient array as %s."%coeffFilename
         np.save(coeffFilename,CoeffArray)
         return CoeffArray
@@ -214,7 +214,7 @@ class CovWeights:
         warnings.filterwarnings("ignore")
         for i in range(nbl):
             for j in range(nchan):
-                w[:,i,j]=1./(CoeffArray[:,A0ind[i]]*CoeffArray[:,A1ind[i]] + 0.01)
+                w[:,i,j]=1./(CoeffArray[:,A0ind[i]] + CoeffArray[:,A1ind[i]] + 0.01)
                 #w[:,i,j]=1./(CoeffArray[:,A0ind[i]]**2 + CoeffArray[:,A1ind[i]]**2 + 0.01)
             PrintProgress(i,nbl)
         warnings.filterwarnings("default")
@@ -255,10 +255,10 @@ def PrintProgress(currentIter,maxIter):
 if __name__=="__main__":
     start_time=time.time()
     ntsol=7
-    corrtime=5
+    corrtime=0
     msname=sys.argv[1]
     print "Finding time-covariance weights for: %s"%msname
     covweights=CovWeights(MSName=msname,ntsol=ntsol)
     coefficients=covweights.FindWeights(tcorr=corrtime)
-    #covweights.SaveWeights(coefficients,colname="VAR_WEIGHT",tcorr=corrtime)
+    covweights.SaveWeights(coefficients,colname="VAR_WEIGHT",tcorr=corrtime)
     print "Total runtime: %f min"%((time.time()-start_time)/60.)
