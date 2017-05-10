@@ -80,9 +80,6 @@ class CovWeights:
         residuals[:,:,:,0]=darray[:,:,:,0]#residualdata[:,:,:,0]
         residuals[:,:,:,1]=darray[:,:,:,3]#residualdata[:,:,:,3]
         # antenna coefficient array
-        residuals=residuals-np.mean(residuals)
-        # ensure things are properly flagged
-        #residuals[np.isnan(residuals)==1]=0
         # TODO - MAKE COEFFARRAY INTO COMPLEX-VALUED WEIGHTS
         CoeffArray=np.zeros((nt,nAnt))#,dtype=np.complex64)
         # start calculating the weights
@@ -164,30 +161,19 @@ class CovWeights:
                 # build weights for each antenna at time t_i
                 for ant in ant1:
                     # set of vis for baselines ant-ant_i
-                    if ant==ant1[0]:
-                        set1=np.where(A0[t_i]==ant)[0]
-                    else:
-                        set1=np.where(A0[t_i]==ant1)[0]
-                    #set1=np.append(np.where(A0[t_i]==ant),np.where(A1[t_i]==ant1))
+                    set1=np.where(A0[t_i]==ant1)[0]
                     # set of vis for baselines ant_i-ant
-                    if ant==ant1[0]:
-                        set2=np.where(A1[t_i]==ant1)[0]
-                    else:
-                        set2=np.where(A1[t_i]==ant)[0]
-                    #set2=np.append(np.where(A1[t_i]==ant),np.where(A0[t_i]==ant1))
+                    set2=np.where(A1[t_i]==ant)[0]
 #                    CoeffArray[t_i,ant] = np.sqrt(np.mean(np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:])*np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:]).conj())\
-#                    CoeffArray[t_i,ant] = np.sqrt( np.std( (np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:])))**2  ) 
-                    CoeffArray[t_i,ant] = (np.mean(np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:])*np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:]).conj())-
+                    CoeffArray[t_i,ant] = (np.mean(np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:])*np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:]).conj())\
+#                    CoeffArray[t_i,ant] = np.sqrt( np.std( (np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:])))**2  )
                                            - np.std( (np.append(rmsarray[t_i,set1,:,:], rmsarray[t_i,set2,:,:]))) )
-#                    CoeffArray[t_i,ant] = (np.mean(np.sqrt(np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:])*np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:]).conj())\
-#                                           - np.std( (np.append(rmsarray[t_i,set1,:,:], rmsarray[t_i,set2,:,:])))) )
                 PrintProgress(t_i,nt)
         warnings.filterwarnings("default")
-#        CoeffArray=CoeffArray-np.mean(CoeffArray)/3.
         for i in range(nAnt):
             thres=0.25*np.median(CoeffArray[:,i])
             CoeffArray[CoeffArray[:,i]<thres,i]=thres
-        coeffFilename="%s/CoeffArray.%i.no1stant.npy"%(msname,tcorr)
+        coeffFilename="%s/CoeffArray.%i.npy"%(msname,tcorr)
         print "Save coefficient array as %s."%coeffFilename
         np.save(coeffFilename,CoeffArray)
         return CoeffArray
@@ -228,7 +214,7 @@ class CovWeights:
         warnings.filterwarnings("ignore")
         for i in range(nbl):
             for j in range(nchan):
-                w[:,i,j]=1./(CoeffArray[:,A0ind[i]] + CoeffArray[:,A1ind[i]] + 0.01)# + np.sqrt(CoeffArray[:,A0ind[i]]*CoeffArray[:,A1ind[i]]))
+                w[:,i,j]=1./(CoeffArray[:,A0ind[i]] + CoeffArray[:,A1ind[i]] + 0.01)
                 #w[:,i,j]=1./(CoeffArray[:,A0ind[i]]**2 + CoeffArray[:,A1ind[i]]**2 + 0.01)
             PrintProgress(i,nbl)
         warnings.filterwarnings("default")
@@ -252,8 +238,6 @@ class CovWeights:
         w[np.isnan(w)]=0
         w[np.isinf(w)]=0
         # normalise
-        print w
-        print np.mean(w)
         w=w/np.mean(w)
         # save in weights column
         ms.putcol(colname,w)
