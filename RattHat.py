@@ -60,8 +60,6 @@ def DropName(filename):
         print "RATT HAT HAS RUN OUT OF SOULS, PLEASE PREPARE NEW BATCH"
     else:
         if name in chosenList:
-            print "THIS MORTAL HAS ALREADY PAID THEIR DUES"
-            print "MORTALS REMAINING:\n",unchosenList
             unchosenList=np.sort(unchosenList[unchosenList!=name])
             np.save(UnchosenOutname,unchosenList)
         else:
