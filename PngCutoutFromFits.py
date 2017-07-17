@@ -100,4 +100,4 @@ if __name__=="__main__":
         print "Making cutouts of size %2.1f' at (RA=%s,Dec=%s) for the following files:"%(size,RA,Dec)
         for i in fitsfiles:
             print i
-    MakeCutout(fitsfiles,RA,Dec,xDegrees=size,yDegrees=size,NSigmaVmin=vmin,NSigmaVmax=vmax,outname=None,verb=verb,SetVminToAverageNoise=noisearg)
+    MakeCutout(fitsfiles,RA,Dec,xDegrees=size/60.,yDegrees=size/60.,NSigmaVmin=vmin,NSigmaVmax=vmax,outname=None,verb=verb,SetVminToAverageNoise=noisearg)
