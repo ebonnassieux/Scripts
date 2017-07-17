@@ -21,8 +21,8 @@ def readArguments():
     parser.add_argument("--filename",type=str,help="Name of the .fits file you want a cutout of",required=True,nargs="+")
     parser.add_argument("--RA",metavar="HH:MM:SS",type=str, help="Right Ascension in hexadecimal hour angle",required=True)
     parser.add_argument("--Dec",metavar="HH:MM:SS",type=str,help="Declination in hexadecimal degrees",required=True)
-    parser.add_argument("--vmin",type=str,default=-2,help="Minimum value for display, in units of rms. Default -2.",required=False)
-    parser.add_argument("--vmax",type=str,default=40,help="Maximum value for display, in units of rms. Default 40.",required=False)
+    parser.add_argument("--vmin",type=float,default=-2,help="Minimum value for display, in units of rms. Default -2.",required=False)
+    parser.add_argument("--vmax",type=float,default=40,help="Maximum value for display, in units of rms. Default 40.",required=False)
     parser.add_argument("--size",metavar="arcmin",type=float,default=5,help="Size of cutout, in arcmin. Default is 5")
     parser.add_argument("--noise",metavar="all/first",choices=["all","first"],type=str,default="first",help="Set of images over which to estimate noise. Default is \"first\", only the first image in the list.",required=False)
     # parse
@@ -44,8 +44,8 @@ def MakeCutout(fitsfiles,RA,Dec,xDegrees=0.1,yDegrees=0.1,NSigmaVmax=10,NSigmaVm
             A=A[np.isnan(A)==0]
             std=np.std(A)
             stdarray.append(std)
-            vmin=-10*std
-            vmax=40*std
+#            vmin=NSigmaVmin*std
+#            vmax=NSigmaVmax*std
             im.close()
         vmin=NSigmaVmin*np.mean(stdarray)
         vmax=NSigmaVmax*np.mean(stdarray)        
@@ -60,7 +60,6 @@ def MakeCutout(fitsfiles,RA,Dec,xDegrees=0.1,yDegrees=0.1,NSigmaVmax=10,NSigmaVm
         std=np.std(A)
         vmin=NSigmaVmin*std
         vmax=NSigmaVmax*std
-        
 
     for ffile in fitsfiles:
         temp = FITSFigure(ffile)
