@@ -122,7 +122,7 @@ class SimulGains:
         image=self.DFT(dudvdata,dus,dvs,DiamDeg=diamdeg,Npix=npix,loop=True)
         return np.copy(image),np.copy(nmatrix)
 
-    def NoisePsfCrossSection(self,PixSizeDeg=1.,Npix=101,loop=True):
+    def NoisePsfCrossSection(self,PixSizeDeg=.002,Npix=101,loop=True):
         # find UV tracks
         us,_,_=self.UV
         # find theoretical covmat
@@ -131,6 +131,7 @@ class SimulGains:
         # create corrected matrices
         diagcorrTheoCovMat=np.copy(TheoCovMat)
         fullcorrTheoCovMat=np.copy(TheoCovMat)
+        complexcorrTheoCovMat=np.copy(TheoCovMat)
         print "copy made"
         invCovMat=np.linalg.inv(TheoCovMat)
         print "invert matrix found"
@@ -138,23 +139,29 @@ class SimulGains:
         diagweights=(np.mean(np.diag(TheoCovMat))/np.diag(TheoCovMat))
 #        stop
         fullweights=np.abs(np.sum(invCovMat,axis=1))/np.abs(np.mean(np.sum(invCovMat,axis=1)))
+        complexweights=np.sum(invCovMat,axis=1)/np.abs(np.mean(np.sum(invCovMat,axis=1)))
         print "Matrices, weights initialised"
         for i in range(TheoCovMat.shape[0]):
             diagcorrTheoCovMat[i,:]=diagcorrTheoCovMat[i,:]*diagweights
             diagcorrTheoCovMat[:,i]=diagcorrTheoCovMat[:,i]*diagweights
             fullcorrTheoCovMat[i,:]=fullcorrTheoCovMat[i,:]*fullweights
             fullcorrTheoCovMat[:,i]=fullcorrTheoCovMat[:,i]*fullweights
+            complexcorrTheoCovMat[i,:]=fullcorrTheoCovMat[i,:]*complexweights
+            complexcorrTheoCovMat[:,i]=fullcorrTheoCovMat[:,i]*complexweights
         # initialise theofuncs
         theofunc=np.reshape(TheoCovMat.ravel(),(1,TheoCovMat.ravel().size,1))
         diagtheofunc=np.reshape(diagcorrTheoCovMat.ravel(),(1,TheoCovMat.ravel().size,1))
         fulltheofunc=np.reshape(fullcorrTheoCovMat.ravel(),(1,TheoCovMat.ravel().size,1))
+        complextheofunc=np.reshape(complexcorrTheoCovMat.ravel(),(1,TheoCovMat.ravel().size,1))
         # initialise simufuncs
         simufunc=np.reshape(np.copy(self.Gains),(self.Gains.shape[0],self.Gains.shape[1],1))
         diagsimufunc=np.copy(simufunc)
         fullsimufunc=np.copy(simufunc)
+        complexsimufunc=np.copy(simufunc)
         for i in range(simufunc.shape[1]):
             diagsimufunc[:,i,0]=simufunc[:,i,0]*diagweights[i]
             fullsimufunc[:,i,0]=simufunc[:,i,0]*fullweights[i]
+            complexsimufunc[:,i,0]=simufunc[:,i,0]*complexweights[i]
         pixsize=PixSizeDeg*np.pi/180
 
 #        diagsimufunc=diagsimufunc/np.mean(diagsimufunc)*np.mean(simufunc)
@@ -191,6 +198,9 @@ class SimulGains:
             nocorrSimuImStack=np.zeros((Npix),np.complex64)
             diagcorrSimuImStack=np.zeros((Npix),np.complex64)
             fullcorrSimuImStack=np.zeros((Npix),np.complex64)
+            complexcorrSimuImStack=np.zeros((Npix),np.complex64)
+            complexcorrTheoImStack=np.zeros((Npix),np.complex64)
+            
             print "begin iteration"
             # iterate over pixels
             for ipix in range(Npix):
@@ -198,18 +208,23 @@ class SimulGains:
                 nocorrTheoImStack[ipix]=np.mean(theofunc[0,:,0]*np.exp(2.*np.pi*1j*(dus[0,:,0]*l[0,0,ipix])))
                 diagcorrTheoImStack[ipix]=np.mean(diagtheofunc[0,:,0]*np.exp(2.*np.pi*1j*(dus[0,:,0]*l[0,0,ipix])))
                 fullcorrTheoImStack[ipix]=np.mean(fulltheofunc[0,:,0]*np.exp(2.*np.pi*1j*(dus[0,:,0]*l[0,0,ipix])))
+                complexcorrTheoImStack[ipix]=np.mean(complextheofunc[0,:,0]*np.exp(2.*np.pi*1j*(dus[0,:,0]*l[0,0,ipix])))
                 nocorrSimuImStack[ipix]=np.var(np.mean(simufunc[:,:,0]*np.exp(2.*np.pi*1j*(us[0,:,0]*l[0,0,ipix])),axis=1))
                 diagcorrSimuImStack[ipix]=np.var(np.mean(diagsimufunc[:,:,0]*np.exp(2.*np.pi*1j*(us[0,:,0]*l[0,0,ipix])),axis=1))
                 fullcorrSimuImStack[ipix]=np.var(np.mean(fullsimufunc[:,:,0]*np.exp(2.*np.pi*1j*(us[0,:,0]*l[0,0,ipix])),axis=1))
+                complexcorrSimuImStack[ipix]=np.var(np.mean(complexsimufunc[:,:,0]*np.exp(2.*np.pi*1j*(us[0,:,0]*l[0,0,ipix])),axis=1))
         # plot cross-sections
         pylab.clf()
         pylab.suptitle("Noise-PSF Cross-Section, m=0")
         pylab.plot(l[0,0,:],nocorrTheoImStack,label="Uncorrected",color="b")
-        pylab.plot(l[0,0,:],diagcorrTheoImStack,label="Diag-corrected",color="g")
-        pylab.plot(l[0,0,:],fullcorrTheoImStack,label="Full-corrected",color="r")
+        pylab.plot(l[0,0,:],diagcorrTheoImStack,label="Sensitivity-optimal",color="g")
+        pylab.plot(l[0,0,:],fullcorrTheoImStack,label="Artefact-optimal",color="r")
+        #pylab.plot(l[0,0,:],complexcorrTheoImStack,label="Complex artefact-optimal",color="c")
         pylab.plot(l[0,0,:],nocorrSimuImStack,alpha=0.7,color="b")
         pylab.plot(l[0,0,:],diagcorrSimuImStack,alpha=0.7,color="g")
         pylab.plot(l[0,0,:],fullcorrSimuImStack,alpha=0.7,color="r")
+        #pylab.plot(l[0,0,:],complexcorrSimuImStack,alpha=0.7,color="c")
+
         pylab.legend()
         pylab.ylabel("Variance in pixel at l [Jy]")
         pylab.xlabel("l [degrees]")
@@ -222,9 +237,10 @@ class SimulGains:
 
 
 
-def test(ctime1=0):
+def test(ctime1=800):
     pixels=11
-    inst=SimulGains(MSname="/data/tasse/BOOTES/BOOTES24_SB140-149.2ch8s.ms",sigma_sec=ctime1)
+#    inst=SimulGains(MSname="/data/tasse/BOOTES/BOOTES24_SB140-149.2ch8s.ms",sigma_sec=ctime1)
+    inst=SimulGains(MSname="/data/etienne.bonnassieux/VINCE//BOOTES24_SB140-149.2ch8s.ms",sigma_sec=ctime1)
     gg_corr=inst.Gains
     # make unweighted images
     imsize=0.4/60 # angular size of image

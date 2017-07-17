@@ -21,7 +21,7 @@ class ClassSampleMachine():
     def sqrtSVD(self,A):
         u,s,v=np.linalg.svd(A)
         s[s<0.]=0.
-        ssq=np.sqrt(s)
+        ssq=np.sqrt(np.abs(s))
         v0=v.T*ssq.reshape(1,ssq.size)
         Asq=np.conj(np.dot(v0,u.T))
         return Asq

@@ -21,7 +21,7 @@ class CovWeights:
     def FindWeights(self,tcorr=0):
         #if tcorr!=0:
         #    tcorr=tcorr*self.ntSol
-        ms=table(self.MSName)
+        ms=table(self.MSName,readonly=False)
         # open antennas
         ants=table(ms.getkeyword("ANTENNA"))
         # open antenna tables
@@ -34,11 +34,12 @@ class CovWeights:
         nbl=np.where(Times==Times[0])[0].size
         warnings.filterwarnings("ignore")
         # TODO: find better name
-        norm=1/ms.getcol("PREDICTED_VIS")
+        #norm=1/np.ones_like(ms.getcol("CORRECTED_DATA"))
         warnings.filterwarnings("default")
         # get rid of NaN
-        norm[np.isnan(norm)]=0
+        #norm[np.isnan(norm)]=0
         if "RESIDUAL_DATA" not in ms.colnames():
+            print "RESIDUAL_DATA not in MS: adding and filling with CORRECTED_DATA"
             desc=ms.getcoldesc("CORRECTED_DATA")
             desc["name"]="RESIDUAL_DATA"
             desc['comment']=desc['comment'].replace(" ","_")
@@ -47,8 +48,7 @@ class CovWeights:
         # bootes test; true flags are in different dir
         flags=ms.getcol("FLAG")
         #flags=np.load(self.MSName+"/Flagging.npy")
-        print "Please ensure that RESIDUAL_DATA or CORRECTED_DATA contains residual visibilities from complete skymodel subtraction, and PREDICTED_VIS contains the uncalibrated flux."
-        residualdata=(ms.getcol("RESIDUAL_DATA")*norm)
+        residualdata=(ms.getcol("RESIDUAL_DATA"))#*norm)
         flags=ms.getcol("FLAG")
         # apply flags to data
         residualdata[flags==1]=0
@@ -59,6 +59,7 @@ class CovWeights:
         nPola=residualdata.shape[2]
         nt=residualdata.shape[0]/nbl
         # reshape antennas and data columns
+        print residualdata.shape,nt,nbl,nChan,nPola
         residualdata=residualdata.reshape((nt,nbl,nChan,nPola))
         # average residual data within calibration cells
         if self.ntSol>1:
@@ -71,6 +72,7 @@ class CovWeights:
         ant1=np.arange(nAnt)
         # make rms array
         darray=ms.getcol("CORRECTED_DATA").reshape((nt,nbl,nChan,nPola))
+        darray=(ms.getcol("CORRECTED_DATA")-ms.getcol("MODEL_DATA")).reshape((nt,nbl,nChan,nPola))
         ms.close()
         rmsarray=np.zeros((nt,nbl,nChan,2),dtype=np.complex64)
         residuals=np.zeros_like(rmsarray,dtype=np.complex64)
@@ -109,7 +111,7 @@ class CovWeights:
                 print "%s column already present; will overwrite"%colname
             else:
                 W=np.ones((nt*nbl,nchan))
-                desc=ms.getcoldesc("IMAGING_WEIGHT")
+                desc=ms.getcoldesc("WEIGHT_SPECTRUM")
                 desc["name"]=colname
                 desc['comment']=desc['comment'].replace(" ","_")
                 ms.addcols(desc)
@@ -192,7 +194,7 @@ class CovWeights:
         np.save(coeffFilename,CoeffArray)
         return CoeffArray
                         
-    def SaveWeights(self,CoeffArray,colname="VAR_WEIGHT",AverageOverChannels=True,tcorr=0):
+    def SaveWeights(self,CoeffArray,colname="VAR_WEIGHT",AverageOverChannels=True,tcorr=0,PreserveResolution=True):
         print "Begin saving the data"
         ms=table(self.MSName,readonly=False)
         # open antennas
@@ -228,10 +230,16 @@ class CovWeights:
         warnings.filterwarnings("ignore")
         for i in range(nbl):
             for j in range(nchan):
-                w[:,i,j]=1./(CoeffArray[:,A0ind[i]] + CoeffArray[:,A1ind[i]] + 0.01)# + np.sqrt(CoeffArray[:,A0ind[i]]*CoeffArray[:,A1ind[i]]))
+                w[:,i,j]=1./(CoeffArray[:,A0ind[i]] + CoeffArray[:,A1ind[i]] + 0.01 + np.sqrt(CoeffArray[:,A0ind[i]]*CoeffArray[:,A1ind[i]]))
                 #w[:,i,j]=1./(CoeffArray[:,A0ind[i]]**2 + CoeffArray[:,A1ind[i]]**2 + 0.01)
             PrintProgress(i,nbl)
         warnings.filterwarnings("default")
+        w[np.isnan(w)]=0
+        w[np.isinf(w)]=0
+        if PreserveResolution==True:
+            for i in range(nbl):
+                w[:,i,:]=w[:,i,:]/np.mean(w[:,i,:])
+        w=w/np.mean(w)
         w=w.reshape(nt*nbl,nchan)
         #else:
         #    #concatenate coeffarray
@@ -248,13 +256,6 @@ class CovWeights:
         #            mat2=CoeffArray1[:,A1ind[i]].reshape((1,nt1))
         #            cmat=np.dot(mat1,mat2)
         #            stop
-
-        w[np.isnan(w)]=0
-        w[np.isinf(w)]=0
-        # normalise
-        print w
-        print np.mean(w)
-        w=w/np.mean(w)
         # save in weights column
         ms.putcol(colname,w)
         ants.close()
