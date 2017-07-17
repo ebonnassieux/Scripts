@@ -6,7 +6,7 @@
 import argparse
 import matplotlib
 matplotlib.use("Agg")
-import aplpy
+from aplpy import FITSFigure 
 import numpy as np
 import sys
 import glob
@@ -63,7 +63,7 @@ def MakeCutout(fitsfiles,RA,Dec,xDegrees=0.1,yDegrees=0.1,NSigmaVmax=10,NSigmaVm
         
 
     for ffile in fitsfiles:
-        temp = aplpy.FITSFigure(ffile)
+        temp = FITSFigure(ffile)
         temp.show_grayscale(vmin=vmin,vmax=vmax)
         temp.recenter(RAdeg,Decdeg,width=xDegrees,height=xDegrees)
         # do grid
