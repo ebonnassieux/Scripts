@@ -21,8 +21,8 @@ def readArguments():
     parser.add_argument("--filename",type=str,help="Name of the .fits file you want a cutout of",required=True,nargs="+")
     parser.add_argument("--RA",metavar="HH:MM:SS",type=str, help="Right Ascension in hexadecimal hour angle",required=True)
     parser.add_argument("--Dec",metavar="HH:MM:SS",type=str,help="Declination in hexadecimal degrees",required=True)
-    parser.add_argument("--vmin",type=str,default=-2,help="Minimum value for display, in units of rms. Default -2.",required=False)
-    parser.add_argument("--vmax",type=str,default=40,help="Maximum value for display, in units of rms. Default 40.",required=False)
+    parser.add_argument("--vmin",type=float,default=-2,help="Minimum value for display, in units of rms. Default -2.",required=False)
+    parser.add_argument("--vmax",type=float,default=40,help="Maximum value for display, in units of rms. Default 40.",required=False)
     parser.add_argument("--size",metavar="arcmin",type=float,default=5,help="Size of cutout, in arcmin. Default is 5")
     parser.add_argument("--noise",metavar="all/first",choices=["all","first"],type=str,default="first",help="Set of images over which to estimate noise. Default is \"first\", only the first image in the list.",required=False)
     parser.add_argument("--pol",metavar="I/Q/U/V",choices=["I","Q","U","V"],type=str,default="I",help="Polarisation to choose, in case of polarimetric fits file. Default is \"I\".",required=False)
@@ -39,6 +39,7 @@ def MakeCutout(fitsfiles,RA,Dec,xDegrees=0.1,yDegrees=0.1,NSigmaVmax=10,NSigmaVm
     if SetVminToAverageNoise=="all":
         stdarray=[]
         for ffile in fitsfiles:
+            print "here"
             im=image(ffile)
             d=im.getdata()
             ind=np.int64(np.random.rand(10000)*d.size)
@@ -46,8 +47,8 @@ def MakeCutout(fitsfiles,RA,Dec,xDegrees=0.1,yDegrees=0.1,NSigmaVmax=10,NSigmaVm
             A=A[np.isnan(A)==0]
             std=np.std(A)
             stdarray.append(std)
-            vmin=-10*std
-            vmax=40*std
+#            vmin=NSigmaVmin*std
+#            vmax=NSigmaVmax*std
             im.close()
         vmin=NSigmaVmin*np.mean(stdarray)
         vmax=NSigmaVmax*np.mean(stdarray)        
@@ -62,12 +63,11 @@ def MakeCutout(fitsfiles,RA,Dec,xDegrees=0.1,yDegrees=0.1,NSigmaVmax=10,NSigmaVm
         std=np.std(A)
         vmin=NSigmaVmin*std
         vmax=NSigmaVmax*std
-        
 
     for ffile in fitsfiles:
         temp = FITSFigure(ffile,slices=[chan,pol])
         temp.show_grayscale(vmin=vmin,vmax=vmax)
-        temp.recenter(RAdeg,Decdeg,width=xDegrees,height=xDegrees)
+        temp.recenter(RAdeg,Decdeg,width=yDegrees,height=xDegrees)
         # do grid
 #        temp.add_grid()
 #        temp.grid.set_alpha(0.8)
@@ -108,4 +108,4 @@ if __name__=="__main__":
         print "Making cutouts of size %2.1f' at (RA=%s,Dec=%s) for the following files:"%(size,RA,Dec)
         for i in fitsfiles:
             print i
-    MakeCutout(fitsfiles,RA,Dec,xDegrees=size,yDegrees=size,NSigmaVmin=vmin,NSigmaVmax=vmax,outname=None,verb=verb,SetVminToAverageNoise=noisearg,pol=polnum,chan=chan)
+    MakeCutout(fitsfiles,RA,Dec,xDegrees=size/60.,yDegrees=size/60.,NSigmaVmin=vmin,NSigmaVmax=vmax,outname=None,verb=verb,SetVminToAverageNoise=noisearg,pol=polnum,chan=chan)
