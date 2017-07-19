@@ -63,6 +63,7 @@ def MakeCutout(fitsfiles,RA,Dec,xDegrees=0.1,yDegrees=0.1,NSigmaVmax=10,NSigmaVm
         vmax=NSigmaVmax*std
 
     for ffile in fitsfiles:
+        # todo: change below so that user can specify which chan/pol slice is chosen. Maybe option to average over freq?
         temp = FITSFigure(ffile,slices=[0,0])
         temp.show_grayscale(vmin=vmin,vmax=vmax)
         temp.recenter(RAdeg,Decdeg,width=yDegrees,height=xDegrees)
