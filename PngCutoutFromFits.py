@@ -25,12 +25,14 @@ def readArguments():
     parser.add_argument("--vmax",type=str,default=40,help="Maximum value for display, in units of rms. Default 40.",required=False)
     parser.add_argument("--size",metavar="arcmin",type=float,default=5,help="Size of cutout, in arcmin. Default is 5")
     parser.add_argument("--noise",metavar="all/first",choices=["all","first"],type=str,default="first",help="Set of images over which to estimate noise. Default is \"first\", only the first image in the list.",required=False)
+    parser.add_argument("--pol",metavar="I/Q/U/V",choices=["I","Q","U","V"],type=str,default="I",help="Polarisation to choose, in case of polarimetric fits file. Default is \"I\".",required=False)
+    parser.add_argument("--chan",metavar="channel",type=int,default=0,help="Frequency channel to choose, in case of mutli-frequency image cube. Default is 0.",required=False)
     # parse
     args=parser.parse_args()
     return vars(args)
 
 
-def MakeCutout(fitsfiles,RA,Dec,xDegrees=0.1,yDegrees=0.1,NSigmaVmax=10,NSigmaVmin=-10,outname=None,SetVminToAverageNoise="first",verb=0):
+def MakeCutout(fitsfiles,RA,Dec,xDegrees=0.1,yDegrees=0.1,NSigmaVmax=10,NSigmaVmin=-10,outname=None,SetVminToAverageNoise="first",verb=0,pol=0,chan=0):
     RAdeg  = HHMMSStoDegrees(RA)*15. # this converts RA from hours to degrees
     Decdeg = HHMMSStoDegrees(Dec)
     # find vmin, vmax
@@ -63,7 +65,7 @@ def MakeCutout(fitsfiles,RA,Dec,xDegrees=0.1,yDegrees=0.1,NSigmaVmax=10,NSigmaVm
         
 
     for ffile in fitsfiles:
-        temp = FITSFigure(ffile)
+        temp = FITSFigure(ffile,slices=[chan,pol])
         temp.show_grayscale(vmin=vmin,vmax=vmax)
         temp.recenter(RAdeg,Decdeg,width=xDegrees,height=xDegrees)
         # do grid
@@ -96,8 +98,14 @@ if __name__=="__main__":
     size=args["size"]
     verb=args["verbose"]
     noisearg=args["noise"]
+    chan=args["chan"]
+    pol=args["pol"]
+    print pol
+    for i,j in enumerate(["I","Q","U","V"]):
+        if pol==j:
+            polnum=i
     if verb:
         print "Making cutouts of size %2.1f' at (RA=%s,Dec=%s) for the following files:"%(size,RA,Dec)
         for i in fitsfiles:
             print i
-    MakeCutout(fitsfiles,RA,Dec,xDegrees=size,yDegrees=size,NSigmaVmin=vmin,NSigmaVmax=vmax,outname=None,verb=verb,SetVminToAverageNoise=noisearg)
+    MakeCutout(fitsfiles,RA,Dec,xDegrees=size,yDegrees=size,NSigmaVmin=vmin,NSigmaVmax=vmax,outname=None,verb=verb,SetVminToAverageNoise=noisearg,pol=polnum,chan=chan)
