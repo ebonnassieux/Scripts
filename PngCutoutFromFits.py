@@ -37,6 +37,7 @@ def MakeCutout(fitsfiles,RA,Dec,xDegrees=0.1,yDegrees=0.1,NSigmaVmax=10,NSigmaVm
     if SetVminToAverageNoise=="all":
         stdarray=[]
         for ffile in fitsfiles:
+            print "here"
             im=image(ffile)
             d=im.getdata()
             ind=np.int64(np.random.rand(10000)*d.size)
@@ -62,9 +63,9 @@ def MakeCutout(fitsfiles,RA,Dec,xDegrees=0.1,yDegrees=0.1,NSigmaVmax=10,NSigmaVm
         vmax=NSigmaVmax*std
 
     for ffile in fitsfiles:
-        temp = FITSFigure(ffile)
+        temp = FITSFigure(ffile,slices=[0,0])
         temp.show_grayscale(vmin=vmin,vmax=vmax)
-        temp.recenter(RAdeg,Decdeg,width=xDegrees,height=xDegrees)
+        temp.recenter(RAdeg,Decdeg,width=yDegrees,height=xDegrees)
         # do grid
 #        temp.add_grid()
 #        temp.grid.set_alpha(0.8)
