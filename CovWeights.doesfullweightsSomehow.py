@@ -8,6 +8,16 @@ import warnings
 import time
 import math
 
+def readArguments():
+    parser=argparse.ArgumentParser("Calculate visibility imagin weights based on calibration quality")
+    parser.add_argument("-v","--verbose",help="Be verbose, say everything program does. Default is False",required=False,action="store_true")
+    parser.add_argument("--filename",type=str,help="Name of the measurement set for which weights want to be calculated",required=True,nargs="+")
+    parser.add_argument("--ntsol",type=float,help="Solution interval, in timesteps, for your calibration",required=True)
+    parser.add_argument("--lambda",type=int,help="Determines how many neighbours covariance is calculated for: default is 0",default=0,required=False)
+    args=parser.parse_args()
+    return vars(args)
+
+
 class CovWeights:
     def __init__(self,MSName,ntsol=1,MaxCorrTime=0,SaveDataProducts=0):
         if MSName[-1]=="/":
@@ -271,11 +281,13 @@ def PrintProgress(currentIter,maxIter):
 ### if program is called as main ###
 if __name__=="__main__":
     start_time=time.time()
-    ntsol=7
-    corrtime=0
-    msname=sys.argv[1]
-    print "Finding time-covariance weights for: %s"%msname
-    covweights=CovWeights(MSName=msname,ntsol=ntsol)
-    coefficients=covweights.FindWeights(tcorr=corrtime)
-    covweights.SaveWeights(coefficients,colname="VAR_WEIGHT",tcorr=corrtime)
+    args=readArguments()
+    msname      = args["filename"]
+    corrtime    = args["lambda"]
+    ntsol       = args["ntsol"]
+    for ms in msname:
+        print "Finding time-covariance weights for: %s"%ms
+        covweights=CovWeights(MSName=ms,ntsol=ntsol)
+        coefficients=covweights.FindWeights(tcorr=corrtime)
+        covweights.SaveWeights(coefficients,colname="VAR_WEIGHT",tcorr=corrtime)
     print "Total runtime: %f min"%((time.time()-start_time)/60.)
