@@ -17,7 +17,7 @@ warnings.filterwarnings("ignore")
 def readArguments():
     # create parser
     parser=argparse.ArgumentParser(description="Make a png cutout from a FITS image.")
-    parser.add_argument("-v","--verbose",help="Be verbose, say everything program does. Default is True",required=False,action="store_true")
+    parser.add_argument("-v","--verbose",help="Be verbose, say everything program does. Default is False",required=False,action="store_true")
     parser.add_argument("--filename",type=str,help="Name of the .fits file you want a cutout of",required=True,nargs="+")
     parser.add_argument("--RA",metavar="HH:MM:SS",type=str, help="Right Ascension in hexadecimal hour angle",required=True)
     parser.add_argument("--Dec",metavar="HH:MM:SS",type=str,help="Declination in hexadecimal degrees",required=True)

@@ -1,3 +1,4 @@
+import argparse
 import os
 from pyrap.tables import table
 import numpy as np
@@ -6,6 +7,18 @@ from numpy import ma
 import sys
 import warnings
 import time
+
+def readArguments():
+    parser=argparse.ArgumentParser("Calculate visibility imagin weights based on calibration quality")
+    parser.add_argument("-v","--verbose",help="Be verbose, say everything program does. Default is False",required=False,action="store_true")
+    parser.add_argument("--filename",type=str,help="Name of the measurement set for which weights want to be calculated",required=True,nargs="+")
+    parser.add_argument("--ntsol",type=float,help="Solution interval, in timesteps, for your calibration",required=True)
+    #parser.add_argument("--fast",help="Take shortcuts. Default is True",action="store_true")
+    #parser.add_argument("--svd",help="Use SVD for matrix inversion. Default is True",action="store_true")
+    parser.add_argument("--lambda",type=int,help="Determines how many neighbours covariance is calculated for: default is 0",default=0,required=False)
+    #parser.add_argument("--savedataproducts","-s",help="Save data products (covariance matrix, diagnostic plots). Default is True",action="store_false")
+    args=parser.parse_args()
+    return vars(args)
 
 class VarianceWeights:
     def __init__(self,MSname,imtype="DDF",ntSol=1,CalcHalfMat=False,useInvSVD=False,DiagOnly=False,SaveDataProducts=True,MaxCorrTime="Full"):
@@ -51,7 +64,7 @@ class VarianceWeights:
         # put warnings back on
         warnings.filterwarnings("default")
         if self.imtype=="DDF":
-            print "Using DDF products to load flags and construct residual data; loading data from CORRECTED_DATA_BACKUP"
+            if verb: print "Using DDF products to load flags and construct residual data; loading data from CORRECTED_DATA_BACKUP"
 #            residuals=ms.getcol("RESIDUAL_DATA")#(ms.getcol("CORRECTED_DATA")-ms.getcol("PREDICTED_DATA"))*norm
             if "RESIDUAL_DATA" not in ms.colnames():
                 desc=ms.getcoldesc("CORRECTED_DATA")
@@ -64,7 +77,7 @@ class VarianceWeights:
             # bootes test; true flags are in different dir
             flags=ms.getcol("FLAG")#np.load(self.MSName+"/Flagging.npy")
         else:
-            print "Not using DDF products: please ensure that CORRECTED_DATA contains residual visibilities from complete skymodel subtraction, and PREDICTED_VIS contains the uncalibrated flux."
+            if verb: print "Not using DDF products: please ensure that CORRECTED_DATA contains residual visibilities from complete skymodel subtraction, and PREDICTED_VIS contains the uncalibrated flux."
             residuals=(ms.getcol("CORRECTED_DATA")*norm)
             flags=ms.getcol("FLAG")
         # apply flags to data
@@ -79,7 +92,7 @@ class VarianceWeights:
         MatShape=(nAnt,nAnt,nChan,nPola,nt)
         A=np.zeros(MatShape,np.complex64)
         NPerCell=np.zeros(MatShape,np.complex64) # defined as complex to avoid losing information
-        print "Begin creation of residual arrays"
+        if verb: print "Begin creation of residual arrays"
         for ant1 in range(nAnt):
             for ant2 in range(nAnt):
                 PrintProgress(ant1*nAnt+ant2,nAnt*nAnt)
@@ -111,7 +124,7 @@ class VarianceWeights:
         else:
             tcorrmax=np.int(self.MaxCorrTime)
         if self.DiagOnly==True or tcorrmax==0:
-            print "Calculating only diagonal elements of the covariance matrix"
+            if verb: print "Calculating only diagonal elements of the covariance matrix"
             C=np.zeros((tlen,tlen),np.complex64)
             NMat=np.zeros((tlen,tlen),np.complex64)
             for i in range(tlen):
@@ -120,7 +133,7 @@ class VarianceWeights:
                 PrintProgress(i,tlen)
         else:
             if self.CalcHalfMat==True:
-                print "Performing Half-Matrix Calculation and Mirroring"
+                if verb: print "Performing Half-Matrix Calculation and Mirroring"
                 C=np.zeros((tlen,tlen),np.complex64)
                 NMat=np.zeros((tlen,tlen),np.complex64) 
                 imax=min(tlen*tlen/2,tcorrmax*(tcorrmax-1)/2+tcorrmax*(tlen-tcorrmax))
@@ -142,7 +155,7 @@ class VarianceWeights:
                     del(ai)
                     del(npci)
             else:
-                print "Performing numpy dot-product"
+                if verb: print "Performing numpy dot-product"
                 C=np.dot(A.T.conj(),A)
                 NMat=np.dot(NPerCell.T,NPerCell)
         # avoid divide-by-zero errors for zeros in denominator
@@ -162,16 +175,16 @@ class VarianceWeights:
                 Weight=np.abs(np.linalg.inv(C))
         # pathological case where all data at 1 time is flagged
         Weight[np.isnan(Weight)]=0
-        print "set nan to zero"
+        if verb: print "set nan to zero"
         # normalise weights matrix
         Weight=Weight/np.mean(Weight)
-        print "average to 1"
+        if verb: print "average to 1"
 
         # resize matrix appropriately if needed
         if self.ntSol>1:
             C1=np.zeros((nt,nt),np.complex64)
             Weight1=np.zeros((nt,nt),np.complex64)
-            print "Rebuild full weight matrix"
+            if verb: print "Rebuild full weight matrix"
             for i in range(tlen):
                 if DiagOnly==True:
                     C1[i*self.ntSol:(i+1)*self.ntSol,i*self.ntSol:(i+1)*self.ntSol]=C[i,i]
@@ -223,11 +236,11 @@ class VarianceWeights:
             desc["name"]="COV_WEIGHT"
             desc['comment']=desc['comment'].replace(" ","_")
             ms.addcols(desc)
-            print "Add COV_WEIGHT column to MS"
+            if verb: print "Add COV_WEIGHT column to MS"
         ms.putcol("COV_WEIGHT",W)
         ms.close()
 
-        print "Run over, thank you for using VINCE"
+        if verb: print "Run over, thank you for using VINCE"
 
 
 ###########################
@@ -260,7 +273,7 @@ def invSVD(A):
     u,s,v=np.linalg.svd(A)
 #    print u,s,v
     test=np.allclose(A,np.dot(u,np.dot(np.diag(s),v)))
-    print "invSVD validity:",test
+    if verb: print "invSVD validity:",test
     # limit impact of small values
     s[s<1.e-6*s.max()]=1.e-6*s.max()
     ssq=np.abs((1./s))
@@ -278,21 +291,29 @@ def invSVD(A):
 #    invSVD(MatTest)
 
 def PrintProgress(currentIter,maxIter):
-    sys.stdout.flush()
-    sys.stdout.write("\rProgress: %5.1f %% "%(100*(currentIter+1.)/maxIter))
-    if currentIter==(maxIter-1):
-        sys.stdout.write("\n")
+    if verb:
+        sys.stdout.flush()
+        sys.stdout.write("\rProgress: %5.1f %% "%(100*(currentIter+1.)/maxIter))
+        if currentIter==(maxIter-1):
+            sys.stdout.write("\n")
 
 
 if __name__=="__main__":
     start_time=time.time()
-    DiagOnly=False
-    maxcorrtime=60#"Full"
-    ntsol=15
+    args=readArguments()
+    msname      = args["filename"]
+    maxcorrtime = args["lambda"]
+    ntsol       = args["ntsol"]
+    global verb
+    verb = args["verbose"]
+    if ntsol==0:
+        DiagOnly=True
+    else: 
+        DiagOnly=False
     calchalfmat=True
-    msname=sys.argv[1]
-    print "Finding time-covariance weights for: %s"%msname
-    test=VarianceWeights(MSname=msname,imtype="",ntSol=ntsol,CalcHalfMat=calchalfmat,useInvSVD=False,DiagOnly=DiagOnly,SaveDataProducts=True,MaxCorrTime=maxcorrtime)
-    weights=test.FindCovMat()
-    test.SaveWeights(weights,diagonly=DiagOnly)
-    print "Total runtime: %f min"%((time.time()-start_time)/60.)
+    for ms in msname:
+        if verb: print "Finding calibration quality weights for: %s"%ms
+        test=VarianceWeights(MSname=ms,imtype="",ntSol=ntsol,CalcHalfMat=calchalfmat,useInvSVD=False,DiagOnly=DiagOnly,SaveDataProducts=True,MaxCorrTime=maxcorrtime)
+        weights=test.FindCovMat()
+        test.SaveWeights(weights,diagonly=DiagOnly)
+    if verb: print "Total runtime: %f min"%((time.time()-start_time)/60.)
