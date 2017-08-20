@@ -31,8 +31,8 @@ class CovWeights:
         self.ntSol=ntsol
 
     def FindWeights(self,tcorr=0):
-        #if tcorr!=0:
-        #    tcorr=tcorr*self.ntSol
+        if tcorr!=0:
+            tcorr=tcorr*self.ntSol
         ms=table(self.MSName,readonly=False,ack=verb)
         # open antennas
         ants=table(ms.getkeyword("ANTENNA"),ack=verb)
@@ -82,7 +82,7 @@ class CovWeights:
         A1=A1.reshape((nt,nbl))
         ant1=np.arange(nAnt)
         # make rms array
-        darray=ms.getcol("CORRECTED_DATA").reshape((nt,nbl,nChan,nPola))
+        #darray=ms.getcol("CORRECTED_DATA").reshape((nt,nbl,nChan,nPola))
         darray=(ms.getcol("CORRECTED_DATA")-ms.getcol("MODEL_DATA")).reshape((nt,nbl,nChan,nPola))
         ms.close()
         rmsarray=np.zeros((nt,nbl,nChan,2),dtype=np.complex64)
@@ -117,7 +117,7 @@ class CovWeights:
             if colname in ms.colnames():
                 if verb: print "%s column already present; will overwrite"%colname
             else:
-                W=np.ones((nt*nbl,nchan))
+                W=np.ones_like(ms.getcol("WEIGHT_SPECTRUM"))
                 desc=ms.getcoldesc("WEIGHT_SPECTRUM")
                 desc["name"]=colname
                 desc['comment']=desc['comment'].replace(" ","_")
@@ -134,9 +134,10 @@ class CovWeights:
 
             warnings.filterwarnings("ignore")
             if verb: print "find covariance between %i nearest times"%tcorr
-            for ant1 in A0:
-                print ant1,time.time()
-                for ant2 in A1:
+            print A0[0]
+            print A0[0].shape
+            for ant1 in set(A0[0]):
+                for ant2 in set(A1[0]):
                     line=0
                     #print "Antenna %i of %i"%(ant,nAnt)
                     for t_i in range(nt):
@@ -145,28 +146,30 @@ class CovWeights:
                         cmat=np.zeros((t_hi-t_lo,t_hi-t_lo))
                         # set of vis for baselines ant-ant_i
                         #ThisBLresiduals=residuals[:,(A0[t_i]==ant)+(A0[t_i]==ant),:,:]
-                        set1=np.where(A0[t_i]==ant1)[0]
-                        set2=np.where(A1[t_i]==ant2)[0]
-                        ThisBLresiduals=np.append(residuals[0,set1,:,:],residuals[0,set2,:,:])
+                        blindex=((A0[t_i]==ant1).astype(int)*(A1[t_i]==ant2)+(A0[t_i]==ant2).astype(int)*(A1[t_i]==ant1)).astype(bool)
+#                        set2=A1[t_i]==ant2
+#                        ThisBLresiduals=np.append(residuals[0,set1,:,:],residuals[0,set2,:,:])
                         # make covmat
                         for iterator1 in range(t_hi-t_lo):
                             for iterator2 in range(t_hi-t_lo):
-                                cmat[iterator1,iterator2]= np.mean(residuals[iterator1*self.ntSol,set1,:,:]*residuals[iterator2*self.ntSol,set2,:,:].conj())#*\
+                                 cmat[iterator1,iterator2]= np.mean(residuals[iterator1*self.ntSol,blindex,:,:]*residuals[iterator2*self.ntSol,blindex,:,:].conj())#*\
 #                                                            np.append(residuals[iterator2*self.ntSol,set1,:,:],residuals[iterator2*self.ntSol,set2,:,:]).conj())
-                                if iterator1==iterator2:
-                                    cmat[iterator1,iterator2]=cmat[iterator1,iterator2]-np.std( (np.append(rmsarray[iterator1,set1,:,:], rmsarray[iterator2,set2,:,:])))
+                                 if iterator1==iterator2:
+                                    cmat[iterator1,iterator2]=cmat[iterator1,iterator2]-np.std( rmsarray[iterator1,blindex,:,:] )
                         # invert covmat
                         invcovmat=np.linalg.inv(cmat)
                         for j in range(nchan):
-                            w[t_i,A0ind[i]*A1ind[i],j]=1/np.abs(np.mean(invcovmat[line]))
+                            w[t_i,blindex,j]=1/np.abs(np.mean(invcovmat[line]))
                         #w[t_i,ant]=np.sqrt(np.abs(np.mean(invcovmat[line])))
                         #print "saving line %i ; "%line,t_hi,t_lo
                         if t_i-tcorr<1:
                             line=line+1
                         elif t_hi==0:
                             line=line-1
-                    if verb: PrintProgress(ant2,nAnt)
+                    if verb: PrintProgress(ant1*nAnt+ant2,(nAnt+1)*nAnt)
             warnings.filterwarnings("default")
+            np.save("fullweights.npy",w)
+            ms.putcol(colname,w)
         else:
             warnings.filterwarnings("ignore")
             if verb: print "Find variance-only weights"
@@ -289,5 +292,5 @@ if __name__=="__main__":
         if verb: print "Finding time-covariance weights for: %s"%ms
         covweights=CovWeights(MSName=ms,ntsol=ntsol)
         coefficients=covweights.FindWeights(tcorr=corrtime)
-        covweights.SaveWeights(coefficients,colname="VAR_WEIGHT",tcorr=corrtime)
+        covweights.SaveWeights(coefficients,colname="GOOD_WEIGHT",tcorr=corrtime)
     if verb: print "Total runtime: %f min"%((time.time()-start_time)/60.)
