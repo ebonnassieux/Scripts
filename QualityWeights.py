@@ -140,8 +140,9 @@ class CovWeights:
         print self.SameWeightsForAllPol
         if self.SameWeightsForAllPol==True:
             if verb: "Set weights to be the same for all polarisations at given time/freq"
+            polweight=np.mean(self.weights,axis=2)
             for i in range(self.weights.shape[2]):
-                self.weights[:,:,i]=np.mean(self.weights,axis=2)
+                self.weights[:,:,i]=polweight
         self.weights=self.weights/np.mean(self.weights)
         np.save("fuckoff.npy",varianceArray)
         np.save("newweights.npy",self.weights)
