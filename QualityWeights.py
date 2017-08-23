@@ -137,13 +137,10 @@ class CovWeights:
             self.weights=1./(np.sqrt(prodweights)+sumweights+self.stabilityVariable)
             self.weights[sumweights==0]=0
         warnings.filterwarnings("default")
-        print "FUCK FUCK FUCK"
         print self.SameWeightsForAllPol
         if self.SameWeightsForAllPol==True:
-            print "FUCK FUCK FUCK"
             if verb: "Set weights to be the same for all polarisations at given time/freq"
             for i in range(self.weights.shape[2]):
-                print i
                 self.weights[:,:,i]=np.mean(self.weights,axis=2)
         self.weights=self.weights/np.mean(self.weights)
         np.save("fuckoff.npy",varianceArray)
