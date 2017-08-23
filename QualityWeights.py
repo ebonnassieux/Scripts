@@ -13,8 +13,9 @@ import math
 ### main functions ###
 
 class CovWeights:
-    def __init__(self,MSName,ntsol=1,nfreqsol=1,MaxCorrTime=0,SaveDataProducts=True,normalise=False,stabilityVariable=0.001,colname="VAR_WEIGHT",clipThreshold=0.2):
+    def __init__(self,MSName,ntsol=1,nfreqsol=1,MaxCorrTime=0,SaveDataProducts=True,normalise=False,stabilityVariable=0.001,colname="VAR_WEIGHT",clipThreshold=0.2,applyWeights=True):
         self.stabilityVariable=stabilityVariable
+        self.ApplyWeights=applyWeights
         self.ClipThreshold=clipThreshold
         if MSName[-1]=="/":
             self.MSName=MSName[0:-1]
@@ -80,6 +81,8 @@ class CovWeights:
             if verb: print "Solution interval larger than a single subband.We reset it to 1 estimate/subband."
             self.nfreqSol=self.nChan
 
+
+
     def FindWeights(self):
         CoeffArray=np.zeros((self.nt,self.nAnts))
         if verb: print "Begin calculating weights"
@@ -122,27 +125,20 @@ class CovWeights:
                                 arsecunt=(timefilter==self.tIndices[efwe])
                                 fuckfilter=fuckfilter+arsecunt
                             tavg=np.mean(antvar[fuckfilter,:,:],axis=0)
-                            #for j in range(i*self.ntSol,upperlim):
-                            #for ii in range(antvar.shape[1]):
-                            #    for jj in range(antvar.shape[2]):
                             antvar[fuckfilter,:,:]=tavg[:,:]
-                                #= np.mean(antvar[timefilter==self.tIndices[i*self.ntSol:(i+1)*self.ntSol],:,:],axis=0)
-#                            np.save("antvar.npy",antvar[fuckfilter])
-#                            stop
                         varianceArray[ant1]=antvar
-#                    print antvar[timefilter==self.tIndices[0:500],0,0].shape
-#                    pylab.plot(antvar[timefilter==self.tIndices[0:500],0,0])
-#                    pylab.show()
-#                    stop
                     # sigma-clip those motherfuckers
                     thres=self.ClipThreshold*np.median(antvar)
                     antvar[antvar<thres]=thres
                     prodweights[arrfilter]=prodweights[arrfilter]*antvar
                     sumweights[arrfilter]=sumweights[arrfilter]+antvar
-                    if verb: PrintProgress(ant1,np.max(self.antindices)+1,message="Calculating weights:")
+                    if verb: PrintProgress(ant1,np.max(self.antindices)+1,message="Calculating weights for channel %i of %i:"%(idnum+1,np.max(self.DdescIndices)+1),newline=False)
             self.weights=1./(np.sqrt(prodweights)+sumweights+self.stabilityVariable)
             self.weights[sumweights==0]=0
         warnings.filterwarnings("default")
+        if SameWeightsForAllPol==True:
+            for i in range(weights.shape[2]):
+                weights[:,:,i]=np.mean(weights,axis=2)
         self.weights=self.weights/np.mean(self.weights)
         np.save("fuckoff.npy",varianceArray)
         np.save("newweights.npy",self.weights)
@@ -165,6 +161,19 @@ class CovWeights:
             self.ms.addcols(desc)
             self.ms.putcol(self.colname,self.weights)
         if verb: "Weights saved to %s"%self.colname
+        # apply weights if need be; useful for shit like casa which don't read imaging weight columns
+        if self.ApplyWeights==True:
+            try:
+                self.ms.putcol("WEIGHT_DATA",self.ms.getcol("CORRECTED_DATA")*self.weights)
+            except RuntimeError:
+                if verb: print "WEIGHT_DATA column missing or ill-shaped; correcting"
+                if "WEIGHT_DATA" in self.ms.colnames():
+                    self.ms.removecols("WEIGHT_DATA")
+                desc=self.ms.getcoldesc("CORRECTED_DATA")
+                desc["name"]="WEIGHT_DATA"
+                desc['comment']=desc['comment'].replace(" ","_")
+                self.ms.addcols(desc)
+                self.ms.putcol("WEIGHT_DATA",self.ms.getcol("CORRECTED_DATA")*self.weights)
 
     def close():
         self.ms.close()
@@ -180,14 +189,16 @@ def readArguments():
     parser.add_argument("--nchansol",type=int,help="Solution interval, in channels, for your calibration",required=True)
     parser.add_argument("--lambda",type=int,help="Determines how many neighbours covariance is calculated for: default is 0",default=0,required=False)
     parser.add_argument("--save",help="Save dudv data + covariances as numpy arrays in MS",required=False,action="store_true")
+    parser.add_argument("--apply",help="Apply weights to the data, saving the result in WEIGHTED_DATA. Default is False.",required=False,action="store_true")
     args=parser.parse_args()
     return vars(args)
  
-def PrintProgress(currentIter,maxIter,message="Progress:"):
+def PrintProgress(currentIter,maxIter,message="Progress:",newline=True):
     sys.stdout.flush()
     sys.stdout.write("\r"+message+" %5.1f %% "%(100*(currentIter+1.)/maxIter))
-    if currentIter==(maxIter-1):
-        sys.stdout.write("\n")
+    if newline:
+        if currentIter==(maxIter-1):
+            sys.stdout.write("\n")
 
 ### if program is called as main ###                                                                                                                                                          
 if __name__=="__main__":
@@ -198,11 +209,12 @@ if __name__=="__main__":
     nchansol    = args["nchansol"]
     ntsol       = args["ntsol"]
     save        = args["save"]
+    applythem   = args["apply"]
     global verb
     verb        = args["verbose"]
     for ms in msname:
         if verb: print "Finding time-covariance weights for: %s"%ms
-        covweights=CovWeights(MSName=ms,ntsol=ntsol,nfreqsol=nchansol)
+        covweights=CovWeights(MSName=ms,ntsol=ntsol,nfreqsol=nchansol,applyWeights=applythem)
 #        covweights.ReadData()
         covweights.FindWeights()
         covweights.close
