@@ -13,9 +13,10 @@ import math
 ### main functions ###
 
 class CovWeights:
-    def __init__(self,MSName,ntsol=1,nfreqsol=1,MaxCorrTime=0,SaveDataProducts=True,normalise=False,stabilityVariable=0.001,colname="VAR_WEIGHT",clipThreshold=0.2,applyWeights=True):
+    def __init__(self,MSName,ntsol=1,nfreqsol=1,MaxCorrTime=0,SaveDataProducts=True,normalise=False,stabilityVariable=0.001,colname="VAR_WEIGHT",clipThreshold=0.2,applyWeights=True,SameWeightsForAllPol=True):
         self.stabilityVariable=stabilityVariable
         self.ApplyWeights=applyWeights
+        self.SameWeightsForAllPol=SameWeightsForAllPol
         self.ClipThreshold=clipThreshold
         if MSName[-1]=="/":
             self.MSName=MSName[0:-1]
@@ -136,7 +137,7 @@ class CovWeights:
             self.weights=1./(np.sqrt(prodweights)+sumweights+self.stabilityVariable)
             self.weights[sumweights==0]=0
         warnings.filterwarnings("default")
-        if SameWeightsForAllPol==True:
+        if self.SameWeightsForAllPol==True:
             for i in range(weights.shape[2]):
                 weights[:,:,i]=np.mean(weights,axis=2)
         self.weights=self.weights/np.mean(self.weights)
