@@ -33,21 +33,30 @@ class ClassSampleMachine():
 
         C=np.zeros((N,N),np.complex64)
     
-        CDiag=np.diag(np.ones((N,),np.complex64))*V0
-    
+        #CDiag=np.diag(np.ones((N,),np.complex64))*V0
+        CDiag=np.ones((N,),np.complex64)*V0
+
         CGauss=np.zeros_like(C)
         for iPix in range(N):
+            #for jPix in range(N):
             CGauss[iPix,:]=V0*Gauss(N,mu=iPix-N/2,sig=self.sigma)
+                #CGauss[iPix,jPix]=V0*Gauss(N,mu=iPix-N/2,sig=self.sigma)[iPix]
             
         for iPix in range(N):
             w1=np.sin(float(iPix)/T*2.*np.pi)-0.3
-            if w1<0: w1=0
-            #w1=0
+            if w1<0: w1=0.1
             w0=1.-0.5*w1
             if w0<0.1: w0=0.1
-            C[iPix,:]+=w0*CDiag[iPix,:]
+            #C[iPix,+=w0*CDiag[iPix,:]
+            CDiag[iPix]=CDiag[iPix]*w0+1+sin(np.float(iPix))
             C[iPix,:]+=w1*CGauss[iPix,:]
-        #C=(C.T.conj()+C)/2.
+            #C[:,iPix]+=w1*CGauss[:,iPix]
+        C=(C.T.conj()+C)/2.
+        C+=np.diag(CDiag)
+
+        pylab.imshow(np.abs(C),interpolation="nearest")
+        pylab.show()
+
         C=np.sqrt(C.T*C)
         self.Cov=C
 #        self.L=np.linalg.cholesky(C)

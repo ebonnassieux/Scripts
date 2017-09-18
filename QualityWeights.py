@@ -25,7 +25,6 @@ class CovWeights:
         self.MaxCorrTime=MaxCorrTime
         self.colname=colname
         self.SaveDataProducts=SaveDataProducts
-        self.ntSol=ntsol
         self.normalise=normalise
         self.nfreqSol=nfreqsol
         #def ReadData(self,tcorr=0):
@@ -34,6 +33,10 @@ class CovWeights:
         self.weights=np.ones_like(self.ms.getcol("WEIGHT_SPECTRUM"))
         self.tarray=self.ms.getcol("TIME")
         self.nt=len(list(set(self.tarray)))
+        self.ntSol=ntsol
+        if self.ntSol>self.nt:
+            if verb: print "Time solution interval larger than integration time. Setting it to 1 estimate/observation."
+            self.nfreqSol=self.nt
         self.tIndices=np.asarray(list(sorted(set(self.tarray))))
         self.dt=self.tIndices[1]-self.tIndices[0]
         # open antenna tables
@@ -55,12 +58,16 @@ class CovWeights:
             desc['comment']=desc['comment'].replace(" ","_")
             self.ms.addcols(desc)
             try:
-                self.resid=self.ms.getcol("CORRECTED_DATA")-self.ms.getcol("MODEL_DATA")
+                # debug
+                self.resid=self.ms.getcol("CORRECTED_DATA")#-self.ms.getcol("MODEL_DATA")
                 self.ms.putcol("RESIDUAL_DATA",self.resid)
             except RuntimeError:
                 if verb: "Cannot form residual data: please put model visibilities in MODEL_DATA column."
                 quit()
         else:
+            if verb: print "Reading data from RESIDUAL_DATA column"
+            # debug
+            #self.resid=self.ms.getcol("RESIDUAL_DATA")
             self.resid=self.ms.getcol("RESIDUAL_DATA")
         self.flags=self.ms.getcol("FLAG")
         if self.normalise:
@@ -74,12 +81,13 @@ class CovWeights:
             warnings.filterwarnings("default")
             norm[np.isnan(norm)]=0
             self.resid=self.resid*norm
+            self.resid[np.isnan(self.resid)]=0
         # apply flags to data
         self.resid[self.flags==1]=0
         self.nChan=self.resid.shape[1]
         self.nPola=self.resid.shape[2]
         if self.nfreqSol>self.nChan:
-            if verb: print "Solution interval larger than a single subband.We reset it to 1 estimate/subband."
+            if verb: print "Frequency solution interval larger than a single subband.We reset it to 1 estimate/subband."
             self.nfreqSol=self.nChan
 
 
@@ -109,12 +117,14 @@ class CovWeights:
                     arrfilter=(self.ddescarray==idnum)*((self.A0==ant1)+(self.A1==ant1))
                     timefilter=self.tarray[arrfilter]
                     temp=self.resid[arrfilter]
-                    antvar=(temp.ravel()*temp.ravel().conj()).reshape(temp.shape)
+                    #antvar=(temp.ravel()*temp.ravel().conj()).reshape(temp.shape)
+                    # TEST TEST TEST
+                    antvar=np.abs(temp.ravel()).reshape(temp.shape)
                     # average in freq
                     if self.nfreqSol>1:
                         for i in range(nfreq1/self.nfreqSol):
                             upperlim=min((i+1)*self.nfreqSol,self.nChan)
-                            freqavg=np.mean(antvar[:,i*self.nfreqSol:upperlim,:],axis=1)
+                            freqavg=np.mean(antvar[:,i*self.nfreqSol:upperlim,:],axis=1,dtype=np.float64)
                             for j in range(i*self.nfreqSol,upperlim):
                                 antvar[:,j,:]=freqavg
                     # average in time
@@ -123,27 +133,37 @@ class CovWeights:
                             fuckfilter=np.zeros_like(timefilter).astype(bool)
                             upperlim=min((i+1)*self.ntSol,self.nt)
                             for efwe in range(i*self.ntSol,upperlim):
-                                arsecunt=(timefilter==self.tIndices[efwe])
-                                fuckfilter=fuckfilter+arsecunt
-                            tavg=np.mean(antvar[fuckfilter,:,:],axis=0)
+                                bollocks=(timefilter==self.tIndices[efwe])
+                                fuckfilter=fuckfilter+bollocks
+                            tavg=np.mean(antvar[fuckfilter,:,:],axis=0,dtype=np.float64)
                             antvar[fuckfilter,:,:]=tavg[:,:]
-                        varianceArray[ant1]=antvar
+                    # average in pol
+                    if self.SameWeightsForAllPol==True:
+                        polweight=np.mean(antvar,axis=2,dtype=np.float64)
+                        for i in range(antvar.shape[2]):
+                            antvar[:,:,i]=polweight
+                    antvar[np.isnan(antvar)]=0
                     # sigma-clip those motherfuckers
                     thres=self.ClipThreshold*np.median(antvar)
                     antvar[antvar<thres]=thres
+                    varianceArray[ant1]=antvar
                     prodweights[arrfilter]=prodweights[arrfilter]*antvar
                     sumweights[arrfilter]=sumweights[arrfilter]+antvar
                     if verb: PrintProgress(ant1,np.max(self.antindices)+1,message="Calculating weights for channel %i of %i:"%(idnum+1,np.max(self.DdescIndices)+1),newline=False)
-            self.weights=1./(np.sqrt(prodweights)+sumweights+self.stabilityVariable)
+            self.weights=1./np.sqrt(np.abs(prodweights+sumweights+self.stabilityVariable))
             self.weights[sumweights==0]=0
         warnings.filterwarnings("default")
-        print self.SameWeightsForAllPol
-        if self.SameWeightsForAllPol==True:
-            if verb: "Set weights to be the same for all polarisations at given time/freq"
-            polweight=np.mean(self.weights,axis=2)
-            for i in range(self.weights.shape[2]):
-                self.weights[:,:,i]=polweight
-        self.weights=self.weights/np.mean(self.weights)
+        # apply flags to weights
+#        self.weights[self.flags==1]=0
+#        self.weights=self.weights/np.mean(self.weights[self.weights.astype(np.bool)],dtype=np.float64)
+#        print set(self.weights.ravel())
+        if verb: print "Normalising weights per spectral window"
+        for idnum in self.DdescIndices:
+            arrfilter=(self.ddescarray==idnum)
+            norm=np.mean(self.weights[arrfilter][self.weights[arrfilter].astype(np.bool)],dtype=np.float64)
+            if np.sum(norm)>0:
+                self.weights[arrfilter]=self.weights[arrfilter]/norm
+            
         np.save("fuckoff.npy",varianceArray)
         np.save("newweights.npy",self.weights)
         if verb: print "Saving weights in %s"%self.colname
@@ -155,7 +175,7 @@ class CovWeights:
             desc['comment']=desc['comment'].replace(" ","_")
             self.ms.addcols(desc)
         try:
-            self.ms.putcol(self.colname,self.weights)
+            self.ms.putcol(self.colname,self.weights[:,:,0])
         except RuntimeError:
             if verb: print "Current column badly shaped: delete and remake"
             self.ms.removecols(self.colname)
@@ -163,11 +183,13 @@ class CovWeights:
             desc["name"]=self.colname
             desc['comment']=desc['comment'].replace(" ","_")
             self.ms.addcols(desc)
-            self.ms.putcol(self.colname,self.weights)
+            self.ms.putcol(self.colname,self.weights)#[:,:,0])
         if verb: "Weights saved to %s"%self.colname
         # apply weights if need be; useful for shit like casa which don't read imaging weight columns
         if self.ApplyWeights==True:
             try:
+                if verb: print "Saving weighted data in WEIGHT_DATA"
+                # debug: change this back to corr_data
                 self.ms.putcol("WEIGHT_DATA",self.ms.getcol("CORRECTED_DATA")*self.weights)
             except RuntimeError:
                 if verb: print "WEIGHT_DATA column missing or ill-shaped; correcting"
@@ -177,7 +199,9 @@ class CovWeights:
                 desc["name"]="WEIGHT_DATA"
                 desc['comment']=desc['comment'].replace(" ","_")
                 self.ms.addcols(desc)
+                # debug: change this back to putting it in WEIGHT_DATA
                 self.ms.putcol("WEIGHT_DATA",self.ms.getcol("CORRECTED_DATA")*self.weights)
+                if verb: "Saving weighted data in newly-created WEIGHT_DATA"
 
     def close():
         self.ms.close()
@@ -219,7 +243,6 @@ if __name__=="__main__":
     for ms in msname:
         if verb: print "Finding time-covariance weights for: %s"%ms
         covweights=CovWeights(MSName=ms,ntsol=ntsol,nfreqsol=nchansol,applyWeights=applythem)
-#        covweights.ReadData()
         covweights.FindWeights()
         covweights.close
 

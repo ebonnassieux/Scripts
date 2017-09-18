@@ -6,7 +6,7 @@ import ClassSampleMachine
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 class SimulGains:
-    def __init__(self,MSname,ant1=0,ant2=55,sigma_sec=0,realisations=2000,timeblock=1,CovInit=True,TimePeriodicity=20,timesteps=0):
+    def __init__(self,MSname,ant1=0,ant2=55,sigma_sec=5000,realisations=1,timeblock=1,CovInit=True,TimePeriodicity=500,timesteps=0):
         # open measurement set
         self.MS=table(MSname)
         # define antennas
@@ -45,7 +45,16 @@ class SimulGains:
         # initiate covariance matrix
         if CovInit==True:
             print "Initialising Covariance"
-            self.covar=ClassSampleMachine.ClassSampleMachine(NPoints=self.nrow,sigma=sigma,T=TimePeriodicity)
+            self.covar=ClassSampleMachine.ClassSampleMachine(NPoints=self.nrow,sigma=500,T=TimePeriodicity)
+            np.save("covmat.npy",self.covar.Cov)
+            #fig0=pylab.subplot(1,1,1)
+            #pylab.title(r"Example Covariance Matrix")
+            #pylab.ylabel(r'$n_t$')
+            #pylab.xlabel(r'$n_t$')
+            #im0=pylab.imshow(np.abs(self.covar.Cov),interpolation="nearest",cmap="gray")
+            #divider0 = make_axes_locatable(fig0)
+            #cax0 = divider0.append_axes("right", size="5%", pad=0.05)
+            #pylab.colorbar(im0, cax=cax0)
             self.Gains=np.reshape(self.covar.GiveSample(NSamples=self.NSample),(self.NSample,self.nrow,1,1))
 
     def DFT(self,func,u,v,DiamDeg=1.,Npix=101,loop=False):
@@ -241,6 +250,13 @@ def test(ctime1=800):
     pixels=11
 #    inst=SimulGains(MSname="/data/tasse/BOOTES/BOOTES24_SB140-149.2ch8s.ms",sigma_sec=ctime1)
     inst=SimulGains(MSname="/data/etienne.bonnassieux/VINCE//BOOTES24_SB140-149.2ch8s.ms",sigma_sec=ctime1)
+    inst.NoisePsfCrossSection()
+    stop
+
+
+
+
+
     gg_corr=inst.Gains
     # make unweighted images
     imsize=0.4/60 # angular size of image
@@ -478,3 +494,4 @@ def AddNoiseToData(MSName,colname,ctime):
 
 if __name__=="__main__":
     test()
+    
