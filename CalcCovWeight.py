@@ -97,7 +97,7 @@ class CovWeights:
         np.save(coeffFilename,CoeffArray)
         return CoeffArray
                         
-    def SaveWeights(self,CoeffArray,colname="TEST_WEIGHT_DONTUSE",AverageOverChannels=True,tcorr=0):
+    def SaveWeights(self,CoeffArray,colname="VAR_WEIGHT",AverageOverChannels=True,tcorr=0):
         print "Begin saving the data"
         ms=table(self.MSName,readonly=False)
         # open antennas
