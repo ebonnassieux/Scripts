@@ -6,7 +6,7 @@ import ClassSampleMachine
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 class SimulGains:
-    def __init__(self,MSname,ant1=0,ant2=55,sigma_sec=5000,realisations=1,timeblock=1,CovInit=True,TimePeriodicity=500,timesteps=0):
+    def __init__(self,MSname,ant1=0,ant2=55,sigma_sec=6400,realisations=2000,CovInit=True,TimePeriodicity=500,timesteps=0,ModelVis=1):
         # open measurement set
         self.MS=table(MSname)
         # define antennas
@@ -16,13 +16,12 @@ class SimulGains:
         # define single baseline
         self.baseline=np.where((A0==ant1)&(A1==ant2))[0]
         # get UV-tracks
-        # debug here
         UV1=self.MS.getcol("UVW")[self.baseline].T
         if timesteps!=0:
             self.UV=UV1[:,0:timesteps]
         else:
             self.UV=UV1
-#        stop
+        np.save("uvpos.thisBL",self.UV)
         # convert sigma(seconds) into sigma(time-pixels)
         if sigma_sec==0:
             sigma=0.00000001
@@ -33,7 +32,7 @@ class SimulGains:
                 sigma=0.00000001
         self.sigma=sigma
 # debug: only use first 2 timesteps #1 out of 10 timesteps
-#        self.UV=UV1[:,::10]
+        self.UV=UV1[:,::10]
 # end debug
         self.nrow=len(self.UV[0])
         # import time-values for Jacobian
@@ -45,7 +44,7 @@ class SimulGains:
         # initiate covariance matrix
         if CovInit==True:
             print "Initialising Covariance"
-            self.covar=ClassSampleMachine.ClassSampleMachine(NPoints=self.nrow,sigma=500,T=TimePeriodicity)
+            self.covar=ClassSampleMachine.ClassSampleMachine(NPoints=self.nrow,sigma=self.sigma,T=TimePeriodicity)
             np.save("covmat.npy",self.covar.Cov)
             #fig0=pylab.subplot(1,1,1)
             #pylab.title(r"Example Covariance Matrix")
@@ -56,8 +55,25 @@ class SimulGains:
             #cax0 = divider0.append_axes("right", size="5%", pad=0.05)
             #pylab.colorbar(im0, cax=cax0)
             self.Gains=np.reshape(self.covar.GiveSample(NSamples=self.NSample),(self.NSample,self.nrow,1,1))
+            if ModelVis==None:
+                self.ModelVis=np.ones_like(self.Gains)
+            else:
+                model  = np.zeros_like(self.Gains)
+                expconst=2.*np.pi*1j/299792458
+                shapething=np.ones((model.shape[0],1))
+                u,v,_=self.UV
+                lVals=np.array([10./3600,-0./3600,0.])
+                mVals=np.array([10./3600,-0./3600,-8./3600])
+                Freq=np.array([1.38963318e+08])
+                phival=np.ones_like(self.Gains)
+                for i in range(len(lVals)):
+                    for j in range(len(Freq)):
+                        model[:,:,j,:]+= (1.+i)*(shapething*np.exp(expconst*Freq[j]*(lVals[i]*u+mVals[i]*v))).reshape((model[:,:,j,:].shape))
+                self.ModelVis=model
+            self.Gains==self.Gains*ModelVis
+        
 
-    def DFT(self,func,u,v,DiamDeg=1.,Npix=101,loop=False):
+    def DFT(self,func,u,v,DiamDeg=1.,Npix=101,loop=True):
         print "in DFT"
         # convert diameter to degrees
         Diam=DiamDeg*np.pi/180
@@ -98,7 +114,7 @@ class SimulGains:
         # find UV tracks
         us,vs,_=self.UV
         # make image
-        image=self.DFT(residual_gains,us,vs,DiamDeg=diamdeg,Npix=npix,loop=False)
+        image=self.DFT(residual_gains,us,vs,DiamDeg=diamdeg,Npix=npix,loop=True)
         varimage=np.var(image,axis=0)
         ax1=residual_gains[:,:,0,0]
         nmatrix=np.dot((ax1.conj()).T,ax1)/self.NSample
@@ -119,11 +135,15 @@ class SimulGains:
         dvs=vs.reshape((1,vs.size))-vs.reshape((vs.size,1))
         dus=dus.flatten()
         dvs=dvs.flatten()
-        print nmatrix
+        ax1=residual_gains[:,:,0,0]
+        #nmatrix=np.dot((ax1.conj()).T,ax1)/self.NSample
+        #nmatrix=np.dot(np.dot(self.AnalyticCovMatrix(),self.ModelVis[0,:,0]),self.ModelVis[0,:,0].T)
+        nmatrix=self.AnalyticCovMatrix()
         for j in range(nmatrix.shape[0]):
             for i in range(nmatrix.shape[1]):
-                if weights != None:
-                    nmatrix[j,i]=nmatrix[j,i]*(weights[j]*weights[i])/np.mean(weights)**2
+                if weights == None:
+                    weights=np.ones_like(self.ModelVis[0,:,0,0])
+                nmatrix[j,i]=nmatrix[j,i]*(weights[j]*weights[i])/np.mean(weights)**2*np.conj(self.ModelVis[0,j,0,0])*self.ModelVis[0,i,0,0]
 #        print "after weight-apply:\n",np.abs(np.round(nmatrix,3))
         dudvdata=nmatrix.flatten()
         dudvdata=dudvdata.reshape(1,len(dudvdata),1,1)
@@ -131,7 +151,7 @@ class SimulGains:
         image=self.DFT(dudvdata,dus,dvs,DiamDeg=diamdeg,Npix=npix,loop=True)
         return np.copy(image),np.copy(nmatrix)
 
-    def NoisePsfCrossSection(self,PixSizeDeg=.002,Npix=101,loop=True):
+    def NoisePsfCrossSection(self,PixSizeDeg=.002,Npix=11,loop=True):
         # find UV tracks
         us,_,_=self.UV
         # find theoretical covmat
@@ -145,10 +165,12 @@ class SimulGains:
         invCovMat=np.linalg.inv(TheoCovMat)
         print "invert matrix found"
         #diagweights=np.abs(np.diag(invCovMat)/np.mean(np.diag(invCovMat)))
-        diagweights=(np.mean(np.diag(TheoCovMat))/np.diag(TheoCovMat))
+        diagweights=(np.mean(np.diag(TheoCovMat),dtype=np.float64)/np.diag(TheoCovMat))
 #        stop
-        fullweights=np.abs(np.sum(invCovMat,axis=1))/np.abs(np.mean(np.sum(invCovMat,axis=1)))
-        complexweights=np.sum(invCovMat,axis=1)/np.abs(np.mean(np.sum(invCovMat,axis=1)))
+        fullweights=np.abs(np.sum(invCovMat,axis=1),dtype=np.float64)#np.abs(np.mean(np.sum(invCovMat,axis=1)))
+        fullweights=np.real(fullweights/np.mean(fullweights))
+
+        complexweights=np.sum(invCovMat,axis=1,dtype=np.float64)/np.abs(np.mean(np.sum(invCovMat,axis=1,dtype=np.float64),dtype=np.float64))
         print "Matrices, weights initialised"
         for i in range(TheoCovMat.shape[0]):
             diagcorrTheoCovMat[i,:]=diagcorrTheoCovMat[i,:]*diagweights
@@ -225,52 +247,102 @@ class SimulGains:
         # plot cross-sections
         pylab.clf()
         pylab.suptitle("Noise-PSF Cross-Section, m=0")
-        pylab.plot(l[0,0,:],nocorrTheoImStack,label="Uncorrected",color="b")
+        pylab.plot(l[0,0,:],nocorrTheoImStack,label="Uncorrected",color="b",)
         pylab.plot(l[0,0,:],diagcorrTheoImStack,label="Sensitivity-optimal",color="g")
         pylab.plot(l[0,0,:],fullcorrTheoImStack,label="Artefact-optimal",color="r")
         #pylab.plot(l[0,0,:],complexcorrTheoImStack,label="Complex artefact-optimal",color="c")
-        pylab.plot(l[0,0,:],nocorrSimuImStack,alpha=0.7,color="b")
-        pylab.plot(l[0,0,:],diagcorrSimuImStack,alpha=0.7,color="g")
-        pylab.plot(l[0,0,:],fullcorrSimuImStack,alpha=0.7,color="r")
+        pylab.plot(l[0,0,:],nocorrSimuImStack,alpha=0.6,color="b",linestyle=":")
+        pylab.plot(l[0,0,:],diagcorrSimuImStack,alpha=0.6,color="g",linestyle=":")
+        pylab.plot(l[0,0,:],fullcorrSimuImStack,alpha=0.6,color="r",linestyle=":")
         #pylab.plot(l[0,0,:],complexcorrSimuImStack,alpha=0.7,color="c")
-
+        pylab.save("nocorrCrossSection",nocorrTheoImStack)
+        pylab.save("diagcorrCrossSection",diagcorrTheoImStack)
+        pylab.save("fullcorrCrossSection",fullcorrTheoImStack)
         pylab.legend()
         pylab.ylabel("Variance in pixel at l [Jy]")
         pylab.xlabel("l [degrees]")
         pylab.savefig("ctime%3.3i-NoisePsfCrossections.png"%self.sigma)
         print "Figure saved in ctime%3.3i-NoisePsfCrossections.png"%self.sigma
-        pylab.show()
-        
+        pylab.show()        
         # return cross-section
         return np.copy(nocorrTheoImStack),np.copy(diagcorrTheoImStack),np.copy(fullcorrTheoImStack),np.copy(nocorrSimuImStack),np.copy(diagcorrSimuImStack),np.copy(fullcorrSimuImStack)
 
+def MakedudvPlots():
+    test=np.load("uvpos.thisBL.npy")
+    u=test[0,:]/1000.
+    v=test[1,:]/1000.
+    u1=np.append(u,-u)
+    v1=np.append(v,-v)
+    temp=u.reshape(len(u),1)
+    du=(temp-temp.T).ravel()
+    temp=v.reshape(len(v),1)
+    dv=(temp-temp.T).ravel()
+    temp=u1.reshape(len(u1),1)
+    du1=(temp-temp.T).ravel()
+    temp=v1.reshape(len(v1),1)
+    dv1=(temp-temp.T).ravel()
+    pylab.clf()
+    pylab.figure(figsize=(8,8))
+#    pylab.suptitle("dudv with and without symmetric track")
+    fig0=pylab.subplot(2,2,1)
+    pylab.title("Single uv-track")
+    pylab.xlabel("u [km]")
+    pylab.ylabel("v [km]")
+    pylab.scatter(u,v,s=0.1)
+    fig1=pylab.subplot(2,2,2)
+    pylab.xlabel(r"$\delta$u [km]")
+    pylab.ylabel(r"$\delta$v [km]")
+    pylab.title("assoc. dudv plane")
+    pylab.scatter(du[::1001],dv[::1001],s=0.1)
+    fig2=pylab.subplot(2,2,3)
+    pylab.title("With symmetric track")
+    pylab.xlabel("u [km]")
+    pylab.ylabel("v [km]")
+    pylab.scatter(u1,v1,s=0.1)
+    pylab.subplot(2,2,4)
+    pylab.title("assoc. dudv plane")
+    pylab.xlabel(r"$\delta$u [km]")
+    pylab.ylabel(r"$\delta$v [km]")
+    pylab.scatter(du1[::1001],dv1[::1001],s=0.1)
+    pylab.tight_layout()
+    pylab.savefig("dudv-withsymtrack-vs-without.png")
+    pylab.show()
 
-
-def test(ctime1=800):
-    pixels=11
+def test(ctime1=6400):
+    pixels=801
 #    inst=SimulGains(MSname="/data/tasse/BOOTES/BOOTES24_SB140-149.2ch8s.ms",sigma_sec=ctime1)
-    inst=SimulGains(MSname="/data/etienne.bonnassieux/VINCE//BOOTES24_SB140-149.2ch8s.ms",sigma_sec=ctime1)
-    inst.NoisePsfCrossSection()
-    stop
+    inst=SimulGains(MSname="/data/etienne.bonnassieux/VINCE//BOOTES24_SB140-149.2ch8s.ms",sigma_sec=6400)#ctime1)
+    
+#    inst.NoisePsfCrossSection()
 
 
 
+    gg_corr= inst.Gains
+    model  = np.zeros_like(gg_corr)
+    expconst=2.*np.pi*1j/299792458
+    shapething=np.ones((model.shape[0],1))
+    u,v,_=inst.UV
+    lVals=np.array([10./3600,-0./3600,0.])
+    mVals=np.array([10./3600,-0./3600,-8./3600])
+    Freq=np.array([1.38963318e+08])
+    for i in range(len(lVals)):
+        for j in range(len(Freq)):
+            model[:,:,j,:]+=(shapething*np.exp(expconst*Freq[j]*(lVals[i]*u+mVals[i]*v))).reshape((model[:,:,j,:].shape))
+    gg_corr=gg_corr*model
 
-
-    gg_corr=inst.Gains
     # make unweighted images
-    imsize=0.4/60 # angular size of image
+    imsize=16./60 # angular size of image
     nocorrSimuImage,nocorrSimuVarImage,nocorrSimuCovmat=inst.MakeCovMapSimul(residual_gains=gg_corr,sigma=ctime1,diamdeg=imsize,npix=pixels)
     nocorrTheoVarianceImage,nocorrTheoCovmat=inst.MakeCovMapTheoretical(residual_gains=gg_corr,sigma=ctime1,diamdeg=imsize,npix=pixels)
     np.save("ctime%3.3i.nocorr.theo.ImStack"%ctime1,nocorrTheoVarianceImage)
     nocorrTheoVarImage=np.abs(np.mean(nocorrTheoVarianceImage,axis=0))
     # calculate weights
-    Cinv=np.linalg.inv(nocorrTheoCovmat)
+    Cinv=np.linalg.inv(inst.AnalyticCovMatrix())
     fullweights=np.abs(np.sum(Cinv,axis=0))
     fullweights=fullweights/np.mean(fullweights)#*fullweights.shape[0]
     diagweights=np.abs(np.diag(Cinv))
     diagweights=diagweights/np.mean(diagweights)#*diagweights.shape[0]
-    print "TEST DIFFERENCE BETWEEN WEIGHTS:",fullweights-diagweights
+#    print "TEST DIFFERENCE BETWEEN WEIGHTS:",fullweights-diagweights
     # apply weights 
     pylab.save("ctime%3.3i.diagweights"%ctime1,diagweights)
     pylab.save("ctime%3.3i.fullweights"%ctime1,fullweights)
@@ -294,8 +366,10 @@ def test(ctime1=800):
     fullSimuImage,fullSimuVarImage,fullSimuCovmat=inst.MakeCovMapSimul(residual_gains=full_gg,sigma=ctime1,diamdeg=imsize,npix=pixels)
     fullTheoVarianceImage,fullTheoCovmat=inst.MakeCovMapTheoretical(residual_gains=full_gg,sigma=ctime1,diamdeg=imsize,npix=pixels,weights=fullweights)
     fullTheoVarImage=np.abs(np.mean(fullTheoVarianceImage,axis=0))
+    PSFimage,_,_=inst.MakeCovMapSimul(residual_gains=model,sigma=0,diamdeg=imsize,npix=pixels)
 
     # save image nparrays
+    np.save("ctime%3.3i.dirty"%ctime1,PSFimage)
     np.save("ctime%3.3i.not_corr.theo.VarIm"%ctime1,nocorrTheoVarImage)
     np.save("ctime%3.3i.diagcorr.theo.VarIm"%ctime1,diagTheoVarImage)
     np.save("ctime%3.3i.fullcorr.theo.VarIm"%ctime1,fullTheoVarImage)
@@ -320,12 +394,13 @@ def test(ctime1=800):
     np.save("ctime%3.3i.diagcorr.vis"%ctime1,diag_gg)
     np.save("ctime%3.3i.fullcorr.vis"%ctime1,full_gg)    
 
-    PlotMaker(ctime1,cmapchoice=None)
+#    PlotMaker(ctime1,cmapchoice="gray")
 #    stop
 
-def PlotMaker(time=0,cmapchoice="gray"):
+def PlotMaker(time=0,cmapchoice="gray_r"):
 
     # load data
+    dirty_image                   = np.load("ctime%3.3i.dirty.npy"%time)
     not_corrTheoCovmatrix         = np.load("ctime%3.3i.not_corr.theo.covmat.npy"%time)
     not_corrSimuCovmatrix         = np.load("ctime%3.3i.not_corr.simu.covmat.npy"%time)
     not_corrTheoVarImage          = np.load("ctime%3.3i.not_corr.theo.VarIm.npy"%time)/np.sum(not_corrTheoCovmatrix)*(not_corrTheoCovmatrix).size
@@ -334,12 +409,16 @@ def PlotMaker(time=0,cmapchoice="gray"):
     diagcorrTheoCovmatrix         = np.load("ctime%3.3i.diagcorr.theo.covmat.npy"%time)
     diagcorrSimuCovmatrix         = np.load("ctime%3.3i.diagcorr.simu.covmat.npy"%time)
     diagcorrTheoVarImage          = np.load("ctime%3.3i.diagcorr.theo.VarIm.npy"%time)/np.sum(not_corrTheoCovmatrix)*(diagcorrTheoCovmatrix).size
-    diagcorrSimuVarImage          = np.load("ctime%3.3i.diagcorr.simu.VarIm.npy"%time)/np.sum(not_corrSimuCovmatrix)*(diagcorrSimuCovmatrix).size
+    diagcorrSimuVarImage          = np.load("ctime%3.3i.diagcorr.simu.VarIm.npy"%time)/np.sum(not_corrTheoCovmatrix)*(diagcorrSimuCovmatrix).size
 #
     fullcorrTheoCovmatrix         = np.load("ctime%3.3i.fullcorr.theo.covmat.npy"%time)
     fullcorrSimuCovmatrix         = np.load("ctime%3.3i.fullcorr.simu.covmat.npy"%time)
     fullcorrTheoVarImage          = np.load("ctime%3.3i.fullcorr.theo.VarIm.npy"%time)/np.sum(not_corrTheoCovmatrix)*(fullcorrTheoCovmatrix).size
     fullcorrSimuVarImage          = np.load("ctime%3.3i.fullcorr.simu.VarIm.npy"%time)/np.sum(not_corrSimuCovmatrix)*(fullcorrSimuCovmatrix).size
+
+    not_corrDirtySimuImage        = np.abs(np.mean(np.load("ctime%3.3i.not_corr.simu.ImStack.npy"%time)[0:100,:,:],axis=0))
+    diagcorrDirtySimuImage        = np.abs(np.mean(np.load("ctime%3.3i.diagcorr.simu.ImStack.npy"%time)[0:100,:,:],axis=0))
+    fullcorrDirtySimuImage        = np.abs(np.mean(np.load("ctime%3.3i.fullcorr.simu.ImStack.npy"%time)[0:100,:,:],axis=0))
 
     ##################
     ### MAKE PLOTS ###
@@ -347,70 +426,171 @@ def PlotMaker(time=0,cmapchoice="gray"):
     pylab.clf()
     pylab.cla()
     pylab.close()
-    pylab.figure(figsize=(12,8))
-    pylab.suptitle(r"Noise-PSF for $\sigma_\tau=%3.3is$"%time)
-    fig0=pylab.subplot(2,3,1)
-    pylab.title(r"Uncorrected Simulated")
-    pylab.ylabel("Dec [arcsec]")
-    pylab.xlabel("RA [arcsec]")
-    im0=pylab.imshow(np.abs(not_corrSimuVarImage),interpolation="nearest",extent=[-12,12,-12,12],cmap=cmapchoice)
-    #,cmap="gray",vmin=0,vmax=1.05,
+    pylab.figure(figsize=(8,8))
+    fig0=pylab.subplot(1,1,1)
+#    pylab.title("Dirty model image")
+#    pylab.ylabel("l [arcmin]")
+#    pylab.xlabel("m [arcmin]")
+#    im0=pylab.imshow(np.abs(dirty_image[0,:,:]),interpolation="nearest",extent=[-8,8,-8,8],cmap=cmapchoice,vmin=0,vmax=1.05*np.max(np.abs(dirty_image)))
+#    divider0 = make_axes_locatable(fig0)
+#    cax0 = divider0.append_axes("right", size="5%", pad=0.05)
+#    pylab.colorbar(im0, cax=cax0)
+#    pylab.tight_layout()
+#    pylab.savefig("Ctime%3.3i.dirty.png"%time)
+#    print "Saved dirty model in file Ctime%3.3i.dirty.png"%time
+    pylab.clf()
+    pylab.cla()
+    pylab.close("all")
+    pylab.clf()
+    pylab.cla()
+    pylab.close()
+
+    pylab.figure(figsize=(8,8))
+    pylab.suptitle(r"Uncorrected Noise-PSF for $\sigma_\tau=%3.3is$"%time)
+    fig0=pylab.subplot(2,2,1)
+    pylab.title(r"a) Simulated noise-map")
+    pylab.ylabel("l [arcmin]")
+    pylab.xlabel("m [arcmin]")
+    im0=pylab.imshow(np.abs(not_corrSimuVarImage),interpolation="nearest",extent=[-8,8,-8,8],cmap=cmapchoice,vmin=0,vmax=1.05*np.max(np.abs(not_corrSimuVarImage)))
     divider0 = make_axes_locatable(fig0)
     cax0 = divider0.append_axes("right", size="5%", pad=0.05)
     pylab.colorbar(im0, cax=cax0)
-    fig0=pylab.subplot(2,3,2)
-    pylab.ylabel("Dec [arcsec]")
-    pylab.xlabel("RA [arcsec]")
-    pylab.title(r"Diag-corrected Simulated")
-    im0=pylab.imshow(np.abs(diagcorrSimuVarImage),interpolation="nearest",extent=[-12,12,-12,12],cmap=cmapchoice)
+    fig1=pylab.subplot(2,2,2)
+    pylab.title(r"b) Predicted noise-map")
+    pylab.ylabel("l [arcmin]")
+    pylab.xlabel("m [arcmin]")
+    im1=pylab.imshow(np.abs(not_corrTheoVarImage),interpolation="nearest",cmap=cmapchoice,vmin=0,vmax=1.05*np.max(np.abs(not_corrSimuVarImage)),extent=[-8,8,-8,8])
+    divider1 = make_axes_locatable(fig1)
+    cax1 = divider1.append_axes("right", size="5%", pad=0.05)
+    pylab.colorbar(im1, cax=cax1)
+    fig2=pylab.subplot(2,2,3)
+    pylab.title(r"c) Difference")
+    pylab.ylabel("l [arcmin]")
+    pylab.xlabel("m [arcmin]")
+    im2=pylab.imshow(np.abs(np.abs(not_corrSimuVarImage)-np.abs(not_corrTheoVarImage)),interpolation="nearest",cmap=cmapchoice,extent=[-8,8,-8,8])
+#vmin=0,vmax=1.05*np.max(np.abs(not_corrSimuVarImage-not_corrSimuVarImage)),extent=[-8,8,-8,8])\
+    divider2 = make_axes_locatable(fig2)
+    cax2 = divider2.append_axes("right", size="5%", pad=0.05)
+    pylab.colorbar(im2, cax=cax2)
+    fig0=pylab.subplot(2,2,4)
+    pylab.title("d) Uncorrupted dirty image")
+    pylab.ylabel("l [arcmin]")
+    pylab.xlabel("m [arcmin]")
+    im0=pylab.imshow(np.abs(dirty_image[0,:,:]),interpolation="nearest",extent=[-8,8,-8,8],cmap=cmapchoice,vmin=0,vmax=1.05*np.max(np.abs(dirty_image)))
     divider0 = make_axes_locatable(fig0)
     cax0 = divider0.append_axes("right", size="5%", pad=0.05)
     pylab.colorbar(im0, cax=cax0)
-    fig0=pylab.subplot(2,3,3)
-    pylab.ylabel("Dec [arcsec]")
-    pylab.xlabel("RA [arcsec]")
-    pylab.title(r"Full-corrected Simulated")
-    im0=pylab.imshow(np.abs(fullcorrSimuVarImage),interpolation="nearest",extent=[-12,12,-12,12],cmap=cmapchoice)
-    divider0 = make_axes_locatable(fig0)
-    cax0 = divider0.append_axes("right", size="5%", pad=0.05)
-    pylab.colorbar(im0, cax=cax0)
-    fig0=pylab.subplot(2,3,4)
-    pylab.title(r"Uncorrected Theoretical")
-    pylab.ylabel("Dec [arcsec]")
-    pylab.xlabel("RA [arcsec]")
-    im1=pylab.imshow(np.abs(not_corrTheoVarImage),interpolation="nearest",cmap=cmapchoice,vmin=0,vmax=1.05*np.max(np.abs(not_corrTheoVarImage)),extent=[-12,12,-12,12])
-    #,cmap="gray",vmin=0,vmax=1.05,
-    divider0 = make_axes_locatable(fig0)
-    cax0 = divider0.append_axes("right", size="5%", pad=0.05)
-    pylab.colorbar(im1, cax=cax0)
-    fig0=pylab.subplot(2,3,5)
-    pylab.title(r"Diag-Corrected Theoretical")
-    pylab.ylabel("Dec [arcsec]")
-    pylab.xlabel("RA [arcsec]")
-    im1=pylab.imshow(np.abs(diagcorrTheoVarImage),interpolation="nearest",cmap=cmapchoice,vmin=0,vmax=1.05*np.max(np.abs(diagcorrTheoVarImage)),extent=[-12,12,-12,12])
-    #,cmap="gray",vmin=0,vmax=1.05,
-    divider0 = make_axes_locatable(fig0)
-    cax0 = divider0.append_axes("right", size="5%", pad=0.05)
-    pylab.colorbar(im1, cax=cax0)
-    fig0=pylab.subplot(2,3,6)
-    pylab.title(r"Full-Corrected Theoretical")
-    pylab.ylabel("Dec [arcsec]")
-    pylab.xlabel("RA [arcsec]")
-    im0=pylab.imshow(np.abs(diagcorrTheoVarImage),interpolation="nearest",cmap=cmapchoice,vmin=0,vmax=1.05*np.max(np.abs(fullcorrTheoVarImage)),extent=[-12,12,-12,12])
-    #,cmap="gray",vmin=0,vmax=1.05,
-    divider0 = make_axes_locatable(fig0)
-    cax0 = divider0.append_axes("right", size="5%", pad=0.05)
-    pylab.colorbar(im0, cax=cax0)
-    #pylab.show()
-    pylab.tight_layout()#pad=1.5)
-    pylab.savefig("SimulationsCorrectionResultsCtime%3.3i.png"%time)
-    print "Saved figured in file SimulationsCorrectionResultsCtime%3.3i.png"%time
+    pylab.tight_layout()
+    pylab.savefig("Ctime%3.3i.NoisePSF.uncorrected.png"%time)
+    print "Saved uncorrected noise-PSF in file Ctime%3.3i.NoisePSF.uncorrected.png"%time
     pylab.clf()
     pylab.cla()
     pylab.close("all")
 
-def lambdaplot(ctime1=0):
-    pixels=1009
+
+    pylab.figure(figsize=(12,4))
+    pylab.suptitle(r"a) Corrected Noise-PSF for $\sigma_\tau=%3.3is$"%time)
+    fig0=pylab.subplot(1,3,1)
+    pylab.title(r"Simulated")
+    pylab.ylabel("l [arcmin]")
+    pylab.xlabel("m [arcmin]")
+    im0=pylab.imshow(np.abs(diagcorrSimuVarImage),interpolation="nearest",extent=[-8,8,-8,8],cmap=cmapchoice,vmin=0,vmax=1.05*np.max(np.abs(not_corrSimuVarImage)))
+    divider0 = make_axes_locatable(fig0)
+    cax0 = divider0.append_axes("right", size="5%", pad=0.05)
+    pylab.colorbar(im0, cax=cax0)
+    fig1=pylab.subplot(1,3,2)
+    pylab.title(r"b) Predicted")
+    pylab.ylabel("l [arcmin]")
+    pylab.xlabel("m [arcmin]")
+    im1=pylab.imshow(np.abs(diagcorrTheoVarImage),interpolation="nearest",cmap=cmapchoice,vmin=0,vmax=1.05*np.max(np.abs(not_corrSimuVarImage)),extent=[-8,8,-8,8])
+    divider1 = make_axes_locatable(fig1)
+    cax1 = divider1.append_axes("right", size="5%", pad=0.05)
+    pylab.colorbar(im1, cax=cax1)
+    fig2=pylab.subplot(1,3,3)
+    pylab.title(r"c) Difference")
+    pylab.ylabel("l [arcmin]")
+    pylab.xlabel("m [arcmin]")
+    im2=pylab.imshow(np.abs(np.abs(diagcorrSimuVarImage)-np.abs(diagcorrTheoVarImage)),interpolation="nearest",cmap=cmapchoice,extent=[-8,8,-8,8])
+    #vmin=0,vmax=1.05*np.max(np.abs(diagcorrSimuVarImage-diagcorrSimuVarImage)),extent=[-8,8,-8,8])
+    divider2 = make_axes_locatable(fig2)
+    cax2 = divider2.append_axes("right", size="5%", pad=0.05)
+    pylab.colorbar(im2, cax=cax2)
+    pylab.tight_layout()
+    pylab.savefig("Ctime%3.3i.NoisePSF.corrected.png"%time)
+    print "Saved corrected noise-PSF in file Ctime%3.3i.NoisePSF.corrected.png"%time
+    pylab.clf()
+    pylab.cla()
+    pylab.close("all")
+    
+    pylab.figure(figsize=(12,4))
+    pylab.suptitle(r"Full-corrected Noise-PSF for $\sigma_\tau=%3.3is$"%time)
+    fig0=pylab.subplot(1,3,1)
+    pylab.title(r"a) Simulated")
+    pylab.ylabel("l [arcmin]")
+    pylab.xlabel("m [arcmin]")
+    im0=pylab.imshow(np.abs(fullcorrSimuVarImage),interpolation="nearest",extent=[-8,8,-8,8],cmap=cmapchoice,vmin=0,vmax=1.05*np.max(np.abs(not_corrSimuVarImage)))
+    divider0 = make_axes_locatable(fig0)
+    cax0 = divider0.append_axes("right", size="5%", pad=0.05)
+    pylab.colorbar(im0, cax=cax0)
+    fig1=pylab.subplot(1,3,2)
+    pylab.title(r"b) Predicted")
+    pylab.ylabel("l [arcmin]")
+    pylab.xlabel("m [arcmin]")
+    im1=pylab.imshow(np.abs(fullcorrTheoVarImage),interpolation="nearest",cmap=cmapchoice,vmin=0,vmax=1.05*np.max(np.abs(not_corrSimuVarImage)),extent=[-8,8,-8,8])
+    divider1 = make_axes_locatable(fig1)
+    cax1 = divider1.append_axes("right", size="5%", pad=0.05)
+    pylab.colorbar(im1, cax=cax1)
+    fig2=pylab.subplot(1,3,3)
+    pylab.title(r"c) Difference")
+    pylab.ylabel("l [arcmin]")
+    pylab.xlabel("m [arcmin]")
+    im2=pylab.imshow(np.abs(np.abs(fullcorrSimuVarImage)-np.abs(fullcorrTheoVarImage)),interpolation="nearest",cmap=cmapchoice,extent=[-8,8,-8,8])
+    divider2 = make_axes_locatable(fig2)
+    cax2 = divider2.append_axes("right", size="5%", pad=0.05)
+    pylab.colorbar(im2, cax=cax2)
+    pylab.tight_layout()
+    pylab.savefig("Ctime%3.3i.NoisePSF.fullcorrected.png"%time)
+    print "Saved corrected noise-PSF in file Ctime%3.3i.NoisePSF.fullcorrected.png"%time
+    pylab.clf()
+    pylab.cla()
+    pylab.close("all")
+
+    pylab.figure(figsize=(12,4))
+    pylab.suptitle("Gain-corrupted simulated dirty image")
+    fig0=pylab.subplot(1,3,1)
+    pylab.title(r"a) No weights")
+    pylab.ylabel("l [arcmin]")
+    pylab.xlabel("m [arcmin]")
+    im0=pylab.imshow(not_corrDirtySimuImage,interpolation="nearest",extent=[-8,8,-8,8],cmap=cmapchoice,vmin=0,vmax=1.05*\
+                     np.max(not_corrDirtySimuImage))
+    divider0 = make_axes_locatable(fig0)
+    cax0 = divider0.append_axes("right", size="5%", pad=0.05)
+    pylab.colorbar(im0, cax=cax0)
+    fig1=pylab.subplot(1,3,2)
+    pylab.title(r"a) Sensitivity weights")
+    pylab.ylabel("l [arcmin]")
+    pylab.xlabel("m [arcmin]")
+    im1=pylab.imshow(diagcorrDirtySimuImage,interpolation="nearest",extent=[-8,8,-8,8],cmap=cmapchoice,vmin=0,vmax=1.05*\
+                     np.max(not_corrDirtySimuImage))
+    divider1 = make_axes_locatable(fig1)
+    cax1 = divider1.append_axes("right", size="5%", pad=0.05)
+    pylab.colorbar(im1, cax=cax1)
+    fig2=pylab.subplot(1,3,3)
+    pylab.title(r"a) Artefact weights")
+    pylab.ylabel("l [arcmin]")
+    pylab.xlabel("m [arcmin]")
+    im2=pylab.imshow(fullcorrDirtySimuImage,interpolation="nearest",extent=[-8,8,-8,8],cmap=cmapchoice,vmin=0,vmax=1.05*\
+                     np.max(not_corrDirtySimuImage))
+    divider2 = make_axes_locatable(fig2)
+    cax2 = divider2.append_axes("right", size="5%", pad=0.05)
+    pylab.colorbar(im2, cax=cax2)
+    pylab.tight_layout()
+    pylab.savefig("ctime%3.3i.CorruptedDirtyImage.png"%time)
+    print "Saved corrupted dirty images in %s"%("ctime%3.3i.CorruptedDirtyImage.png"%time)
+
+
+def lambdaplot(ctime1=6400):
+    pixels=31
     testval=5
     inst=SimulGains(MSname="/data/tasse/BOOTES/BOOTES24_SB140-149.2ch8s.ms",sigma_sec=ctime1,timesteps=testval)
     residuals=inst.Gains
@@ -420,7 +600,7 @@ def lambdaplot(ctime1=0):
     nocorrTheoVarianceImage,nocorrTheoCovmat=inst.MakeCovMapTheoretical(residual_gains=residuals,sigma=ctime1,diamdeg=imsize,npix=pixels)
     nocorrTheoVarImage=np.abs(np.mean(nocorrTheoVarianceImage,axis=0))/np.mean(nocorrTheoCovmat)
     # calculate weights
-    Cinv=np.linalg.inv(nocorrTheoCovmat)
+    Cinv=np.linalg.inv(inst.AnalyticCovMat())
     fullweights=np.abs(np.sum(Cinv,axis=0))#/np.abs(np.mean(np.sum(Cinv,axis=0)))
     diagweights=np.abs(np.diag(Cinv))#/np.abs(np.mean(np.diag(Cinv)))
     Lambda=np.arange(200)/20.
@@ -448,8 +628,8 @@ def lambdaplot(ctime1=0):
         minvals.append(np.min(np.abs(corrTheoVarImage)))
         maxvals.append(np.max(np.abs(corrTheoVarImage)))
         print "in loop, iter %i"%i,np.mean(weights)#np.sum(nocorrTheoCovmat-inst.covar.Cov)
-        print maxvals[-1],minvals[-1]
-        print np.mean(corrSimuCovmat)/np.mean(nocorrSimuCovmat)
+#        print maxvals[-1],minvals[-1]
+#        print np.mean(corrSimuCovmat)/np.mean(nocorrSimuCovmat)
         # make nocorr min, max arrays
         initMin.append(np.min(np.abs(nocorrTheoVarImage)))
         initMax.append(np.max(np.abs(nocorrTheoVarImage)))
@@ -470,28 +650,7 @@ def lambdaplot(ctime1=0):
 #    stop
 
     
-def AddNoiseToData(MSName,colname,ctime):
-    #open MS
-    ms=table(MSName,readonly=True)
-    ants=table(ms.getkeyword("ANTENNA"))
-    nAnt=len(ants.getcol("NAME"))
-    ants.close()
-    data=ms.getcol(colname)
-    Times=ms.getcol("TIME")
-    nbl=np.where(Times==Times[0])[0].size
-    nt=data.shape[0]/nbl
-    nChan=data.shape[1]
-    nPola=data.shape[2]
-    ms.close()
-    # find number of baselines
-    inst=SimulGains(MSname=MSName,sigma_sec=ctime,realisations=nbl*nChan*nPola)
-#    data=data.reshape(nt,nbl,nChan,nPola)
-    # add noise to data; inst.Gains contains time-correlated noise
-    data=data+np.swapaxes(inst.Gains[:,:,0,0],0,1).reshape(nt*nbl,nChan,nPola)
-    ms=table(MSName,readonly=False)
-    ms.putcol(colname,data)
-    ms.close()
 
 if __name__=="__main__":
-    test()
-    
+#    test()
+    PlotMaker(6400)

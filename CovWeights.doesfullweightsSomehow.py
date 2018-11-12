@@ -60,7 +60,8 @@ class CovWeights:
         # bootes test; true flags are in different dir
         flags=ms.getcol("FLAG")
         #flags=np.load(self.MSName+"/Flagging.npy")
-        residualdata=(ms.getcol("RESIDUAL_DATA"))#*norm)
+        #DEBUG residualdata=(ms.getcol("RESIDUAL_DATA"))#*norm)
+        residualdata=ms.getcol("CORRECTED_DATA")
         flags=ms.getcol("FLAG")
         # apply flags to data
         residualdata[flags==1]=0
@@ -236,13 +237,15 @@ class CovWeights:
         if verb: print "Fill weights array"
         A0ind=A0[0,:]
         A1ind=A1[0,:]
-        
+        #CoeffArray=1./CoeffArray
+        #CoeffArray[np.isnan(CoeffArray)]==0
         #if tcorr<2:
         warnings.filterwarnings("ignore")
         for i in range(nbl):
             for j in range(nchan):
-                w[:,i,j]=1./(CoeffArray[:,A0ind[i]] + CoeffArray[:,A1ind[i]] + 0.01 + np.sqrt(CoeffArray[:,A0ind[i]]*CoeffArray[:,A1ind[i]]))
-                #w[:,i,j]=1./(CoeffArray[:,A0ind[i]]**2 + CoeffArray[:,A1ind[i]]**2 + 0.01)
+                #w[:,i,j]=1./(CoeffArray[:,A0ind[i]] + CoeffArray[:,A1ind[i]] + 0.01 + np.sqrt(CoeffArray[:,A0ind[i]]*CoeffArray[:,A1ind[i]]))
+                w[:,i,j]=1./((CoeffArray[:,A0ind[i]]) + (CoeffArray[:,A1ind[i]])+ (CoeffArray[:,A0ind[i]]*CoeffArray[:,A1ind[i]]+0.01))
+                #w[:,i,j]=1./(CoeffArray[:,A0ind[i]] + CoeffArray[:,A1ind[i]] + 0.01)
             if verb: PrintProgress(i,nbl)
         warnings.filterwarnings("default")
         w[np.isnan(w)]=0

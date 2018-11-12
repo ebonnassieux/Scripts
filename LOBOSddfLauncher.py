@@ -57,14 +57,17 @@ parset="LBcal.DDF.parset"
 
 # values taken from http://vo.astron.nl/lobos/lobos/cone/form
 RADec=np.array([\
+#[217.5780125,52.29161],\
+#[214.9351625,54.3846069444],\
+#[215.333545833,53.0627769444],\
+[212.834283333,52.2011938889],\
+[215.2892,51.3756830556],\
+[212.959658333,52.817405],\
+[212.02915,52.9198211111],\
+[212.040654167,52.6795988889],\
 [217.5780125,52.29161],\
 [214.9351625,54.3846069444],\
-[215.333545833,53.0627769444],\
-#[215.2892,51.3756830556],\
-[212.959658333,52.817405],\
-[212.834283333,52.2011938889],\
-[212.02915,52.9198211111],\
-[212.040654167,52.6795988889]
+[215.333545833,53.0627769444]\
 ])
 # convert RA into hours
 print RADec.shape
@@ -72,15 +75,19 @@ RADec[:,0]=RADec[:,0]/15.
 
 lbcsnum=np.array([\
 #                  1,\
-                  2,\
-                  3,\
-#                  4,\
-                  5,\
+#                  2,\
+#                  3,\
                   6,\
+                  4,\
+                  5,\
                   7,\
-                  8\
+                  8,\
+                  1,\
+                  2,\
+                  3\
 ])
 
+# still in the old order
 #RADec=np.array([\
 #["14:30:18.72","52:17:29.80"],\
 #["14:19:44.44","54:23:04.58"],\
@@ -91,15 +98,26 @@ lbcsnum=np.array([\
 #["14:08:07.00","52:55:11.36"],\
 #["14:08:09.76","52:40:46.56"],])
 
-for i in range(RADec.shape[0]):
-    for j in range(MSName.shape[0]):
-        imname="LOBOS%i.%s.uniform"%(lbcsnum[i],MSName[j])
-        logname=imname+".log"
-        ss="DDF.py %s --MSName %s --ImageName %s --Mode=Dirty --ChunkHours 10 --PhaseCenterRADEC=[%s,%s] >%s 2>&1"\
-            %(parset,MSName[j],imname,AngValtoHHMMSS(RADec[i,0]),AngValtoHHMMSS(RADec[i,1]),logname)
-        print ss
-        pop=[]
-        pop.append(subprocess.Popen(ss,shell=True))
-        for p in pop:
-            p.wait()
+uvcut=[100,2000]
+#MSlist="MSlist.3c295.SC.flagRS.uvcut.2ptsources.maskauto.60sb.pass2.txt"
+MSlist="MSlist.fullBW.txt"
+prename="IMAGES/"+MSlist.split("txt")[0]
+for i in lbcsnum:
+#    i=i
+    imname="LOBOS%i.%s.uniform"%(i,MSlist)
+    logname=imname+".log"
+    ss="DDF.py --Data-MS %s --Output-Name %s --Image-Cell 0.1 --Image-NPix 5000"%(MSlist,prename+imname)+\
+    " --Image-PhaseCenterRADEC [%s,%s] --Output-Mode Clean --RIME-DecorrMode FT --Mask-Auto 1"\
+    %(AngValtoHHMMSS(RADec[lbcsnum==i,0]),AngValtoHHMMSS(RADec[lbcsnum==i,1]))+\
+    " --Data-ColName CORRECTED_DATA --Output-RestoringBeam .4 --Parallel-NCPU=40 --Selection-UVRangeKm %s,%s"%(uvcut[0],uvcut[1])+\
+    " --Weight-ColName=IMAGING_WEIGHT --Deconv-Mode SSD --Deconv-MaxMajorIter 3 --Output-Also all --GAClean-ScalesInitHMP [0,1,2]"+\
+    " --Cache-Reset 0 --Beam-Model LOFAR --Beam-LOFARBeamMode A --Weight-Mode Briggs --Weight-Robust -2 --Freq-NBand=6"+\
+    " --Misc-ConserveMemory 1 --Output-Cubes=all --Selection-FlagAnts [RS210,RS509]  > %s.ddf.log 2>&1 "%(prename+imname)
+
+    print ss
+    print ""
+    pop=[]
+    pop.append(subprocess.Popen(ss,shell=True))
+    for p in pop:
+        p.wait()
 

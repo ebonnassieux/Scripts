@@ -9,7 +9,7 @@ import warnings
 import time
 
 def readArguments():
-    parser=argparse.ArgumentParser("Calculate visibility imagin weights based on calibration quality")
+    parser=argparse.ArgumentParser("Calculate visibility imaging weights based on calibration quality")
     parser.add_argument("-v","--verbose",help="Be verbose, say everything program does. Default is False",required=False,action="store_true")
     parser.add_argument("--filename",type=str,help="Name of the measurement set for which weights want to be calculated",required=True,nargs="+")
     parser.add_argument("--ntsol",type=float,help="Solution interval, in timesteps, for your calibration",required=True)
