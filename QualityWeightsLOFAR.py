@@ -147,7 +147,7 @@ class CovWeights:
         warnings.filterwarnings("ignore")
 
         # do gains stuff
-        ant1gainarray1,ant2gainarray1=self.ReadGainFile()
+        ant1gainarray,ant2gainarray=readGainFile(self.gainfile, ms, nt, nchan, nbl,tarray,nAnt,self.MSName)
         for i in range(nbl):
             for j in range(nchan):
                 w[:,i,j]=1./(CoeffArray[:,A0ind[i]]*ant2gainarray[i]+CoeffArray[:,A1ind[i]]*ant1gainarray[i]+CoeffArray[:,A0ind[i]]*CoeffArray[:,A1ind[i]] + 0.1)
@@ -164,46 +164,46 @@ class CovWeights:
         ants.close()
         ms.close()
 
-    def readGainfile(self):
-        if self.gainfile[-4:]==".npy":
-            print "Assume reading a kMS sols file"
-            gainsnpz=np.load(self.gainfile)
-	    gains=gainsnpz["Sols"]
-            #gainnames=gainsnpz["StationNames"]
-            ant1gainarray=np.ones((nt*nbl))
-            ant2gainarray=np.ones((nt*nbl))
-            A0arr=ms.getcol("ANTENNA1")
-            A1arr=ms.getcol("ANTENNA2")
-            print "Build squared gain array"
-            for i in range(len(gains)):
-                timemask=(tarray>gains[i][0])*(tarray<gains[i][1])
-                for j in range(nAnt):
-                    shaap1=np.ones_like(ant1gainarray[timemask][A0arr[timemask]==j])
-                    shaap2=np.ones_like(ant2gainarray[timemask][A1arr[timemask]==j])
-                    mask1=timemask*(A0arr==j)
-                    mask2=timemask*(A1arr==j)
-                    ant1gainarray[mask1]=np.abs(np.nanmean(gains[i][3][0,j]))
-                    ant2gainarray[mask2]=np.abs(np.nanmean(gains[i][3][0,j]))
-                PrintProgress(i,len(gains))
-            if self.SaveDataProducts:
-                np.save("ant1gainarray",ant1gainarray)
-                np.save("ant2gainarray",ant2gainarray)
-            ant1gainarray=np.load("ant1gainarray.npy")
-            ant2gainarray=np.load("ant2gainarray.npy")
-            ant1gainarray1=np.ones((nt,nbl,nchan))
-            ant2gainarray1=np.ones((nt,nbl,nchan))
-            for i in range(nchan):
-                ant1gainarray1[:,:,i]=(ant1gainarray.reshape((nt,nbl)))**2
-                ant2gainarray1[:,:,i]=(ant2gainarray.reshape((nt,nbl)))**2
-        if self.gainfile[-3:]==".h5":
+def readGainFile(gainfile,ms,nt,nchan,nbl,tarray,nAnt,msname):
+    if gainfile[-4:]==".npz":
+        print "Assume reading a kMS sols file"
+        gainsnpz=np.load(gainfile)
+	gains=gainsnpz["Sols"]
+        ant1gainarray=np.ones((nt*nbl))
+        ant2gainarray=np.ones((nt*nbl))
+        A0arr=ms.getcol("ANTENNA1")
+        A1arr=ms.getcol("ANTENNA2")
+        print "Build squared gain array"
+#        for i in range(len(gains)):
+#            timemask=(tarray>gains[i][0])*(tarray<gains[i][1])
+#            for j in range(nAnt):
+#                mask1=timemask*(A0arr==j)
+#                mask2=timemask*(A1arr==j)
+#                ant1gainarray[mask1]=np.abs(np.nanmean(gains[i][3][0,j]))
+#                ant2gainarray[mask2]=np.abs(np.nanmean(gains[i][3][0,j]))
+#            PrintProgress(i,len(gains))
+#        np.save(msname+"/ant1gainarray",ant1gainarray)
+#        np.save(msname+"/ant2gainarray",ant2gainarray)
+        ant1gainarray=np.load(msname+"/ant1gainarray.npy")
+        ant2gainarray=np.load(msname+"/ant2gainarray.npy")
+#        ant1gainarray1=np.ones((nt,nbl,nchan))
+#        ant2gainarray1=np.ones((nt,nbl,nchan))
+#        for i in range(nchan):
+#            ant1gainarray1[:,:,i]=ant1gainarray**2
+#            ant2gainarray1[:,:,i]=ant2gainarray**2
+        ant1gainarray1=ant1gainarray**2#1.reshape((nt*nbl,nchan))
+        ant2gainarray1=ant2gainarray**2#1.reshape((nt*nbl,nchan))
+        print 
+        if gainfile[-3:]==".h5":
             print "Assume reading losoto h5parm file"
             
 
-        else:
-            print "Please convert gain file to either kMS numpy array or LoSoTo h5 format, as these are only ones currently supported."
-            ant1gainarray1=np.ones((nt*nbl,nchan))
-            ant2gainarray=np.ones_like(ant1gainarray1)
-        return ant1gainarray1,ant2gainarray1
+    else:
+        print "Assuming that gain amplitudes are same everywhe. If untrue, please convert gain file to either kMS numpy array or LoSoTo h5 format, as these are only ones currently supported."
+        ant1gainarray1=np.ones((nt*nbl))
+        ant2gainarray1=np.ones_like(ant1gainarray1)
+        print ant1gainarray1.shape
+    return ant1gainarray1,ant2gainarray1
 
         
 ### auxiliary functions ###
@@ -228,9 +228,9 @@ def readArguments():
     parser.add_argument("--filename",type=str,help="Name of the measurement set for which weights want to be calculated",required=True,nargs="+")
     parser.add_argument("--ntsol",type=int,help="Solution interval, in timesteps, for your calibration",required=True)
     parser.add_argument("--colname",type=str,help="Name of the weights column name you want to save the weights to. Default is CAL_WEIGHT.",required=False,default="CAL_WEIGHT")
-    parser.add_argument("--gainfile",type="str",help="Name of the gain file you want to read to rebuild the calibration quality weights."+\
-                        " If no file is given, equivalent to rebuilding weights for phase-only calibration.",required=False,default=True)
-    parser.add_argument("--uvcutkm",type=float,nargs=2,default=0,2000,required=False,help="uvcut used during calibration, in km.")
+    parser.add_argument("--gainfile",type=str,help="Name of the gain file you want to read to rebuild the calibration quality weights."+\
+                        " If no file is given, equivalent to rebuilding weights for phase-only calibration.",required=False,default="")
+    parser.add_argument("--uvcutkm",type=float,nargs=2,default=[0,2000],required=False,help="uvcut used during calibration, in km.")
 #    parser.add_argument("--nchansol",type=int,help="Solution interval, in channels, for your calibration",required=True)
     args=parser.parse_args()
     return vars(args)
@@ -245,11 +245,10 @@ if __name__=="__main__":
     ntsol       = args["ntsol"]
     colname     = args["colname"]
     gainfile    = args["gainfile"]
-    uvcut       = args["uvcut"]
+    uvcut       = args["uvcutkm"]
     for msname in mslist:
         print "Finding time-covariance weights for: %s"%msname
-        coefficients=covweights.FindWeights(tcorr=0,colname=colname,gainfile=gainfile,uvcut=uvcut)
-        covweights=CovWeights(MSName=msname,ntsol=ntsol)
-        coefficients=1
+        covweights=CovWeights(MSName=msname,ntsol=ntsol,gainfile=gainfile,uvcut=uvcut)
+        coefficients=covweights.FindWeights(tcorr=0,colname=colname)
         covweights.SaveWeights(coefficients,colname=colname,AverageOverChannels=True,tcorr=0)
         print "Total runtime: %f min"%((time.time()-start_time)/60.)
