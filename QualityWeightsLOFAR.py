@@ -10,7 +10,7 @@ import math
 import argparse
 
 class CovWeights:
-    def __init__(self,MSName,ntsol=1,SaveDataProducts=0,uvcut=[0,2000],gainfile=None):
+    def __init__(self,MSName,ntsol=1,SaveDataProducts=0,uvcut=[0,2000],gainfile=None,phaseonly=False):
         if MSName[-1]=="/":
             self.MSName=MSName[0:-1]
         else:
@@ -20,6 +20,7 @@ class CovWeights:
         self.ntSol=ntsol
         self.uvcut=uvcut
         self.gainfile=gainfile
+        self.phaseonly=phaseonly
         
     def FindWeights(self,tcorr=0,colname=""):
         ms=table(self.MSName,readonly=False)
@@ -33,8 +34,8 @@ class CovWeights:
         # load ant indices
         A0=ms.getcol("ANTENNA1")
         A1=ms.getcol("ANTENNA2")
-        Times=ms.getcol("TIME")
-        nbl=np.where(Times==Times[0])[0].size
+        tarray=ms.getcol("TIME")
+        nbl=np.where(tarray==tarray[0])[0].size
         warnings.filterwarnings("ignore")
         warnings.filterwarnings("default")
         if "RESIDUAL_DATA" not in ms.colnames():
@@ -64,6 +65,28 @@ class CovWeights:
         residualdata=residualdata.reshape((nt,nbl,nChan,nPola))
         # average residual data within calibration cells
         ### TODO: the averaging should be done later; try using a filter instead of this ###
+#        times=np.array(list(sorted(set(tarray))))
+        A0=A0.reshape((nt,nbl))
+        A1=A1.reshape((nt,nbl))
+#        ant1=np.arange(nAnt)
+#        CoeffArray=np.zeros((nt,nAnt))
+#        print "Begin calculating antenna-based coefficients"
+#        for i,t_i in enumerate(times):
+#            indexmax=min(len(times)-1,i+self.ntSol)
+#            indexmin=max(0,i-self.ntSol)
+#            tmin=times[indexmin]
+#            tmax=times[indexmax]
+#            tmask=(tarray>tmin)*(tarray<tmax)
+#            for ant in ant1:
+#                # set of vis for baselines ant-ant_i
+#                set1=(A0==ant)
+#                # set of vis for baselines ant_i-ant
+#                set2=(A1==ant)
+#                resmask=tmask*(set1+set2)
+#                rarray=residualdata[resmask]
+#                CoeffArray[i,ant] = np.mean(np.abs(rarray*rarray.conj()))
+#            PrintProgress(i,nt)
+        
         if self.ntSol>1:
             tspill=nt%self.ntSol
             nt1=nt+self.ntSol-tspill
@@ -147,10 +170,10 @@ class CovWeights:
         warnings.filterwarnings("ignore")
 
         # do gains stuff
-        ant1gainarray,ant2gainarray=readGainFile(self.gainfile, ms, nt, nchan, nbl,tarray,nAnt,self.MSName)
+        ant1gainarray,ant2gainarray=readGainFile(self.gainfile, ms, nt, nchan, nbl,tarray,nAnt,self.MSName,self.phaseonly)
         for i in range(nbl):
             for j in range(nchan):
-                w[:,i,j]=1./(CoeffArray[:,A0ind[i]]*ant2gainarray[i]+CoeffArray[:,A1ind[i]]*ant1gainarray[i]+CoeffArray[:,A0ind[i]]*CoeffArray[:,A1ind[i]] + 0.1)
+                w[:,i,j]=1./(CoeffArray[:,A0ind[i]]*ant2gainarray[i,j]+CoeffArray[:,A1ind[i]]*ant1gainarray[i,j]+CoeffArray[:,A0ind[i]]*CoeffArray[:,A1ind[i]] + 0.1)
             PrintProgress(i,nbl)
         warnings.filterwarnings("default")
         w=w.reshape(nt*nbl,nchan)
@@ -161,48 +184,72 @@ class CovWeights:
         # save in weights column
         if colname!=None:
             ms.putcol(colname,w)
+        else: print "No colname given, so weights not saved in MS."
         ants.close()
         ms.close()
 
-def readGainFile(gainfile,ms,nt,nchan,nbl,tarray,nAnt,msname):
-    if gainfile[-4:]==".npz":
-        print "Assume reading a kMS sols file"
-        gainsnpz=np.load(gainfile)
-	gains=gainsnpz["Sols"]
-        ant1gainarray=np.ones((nt*nbl))
-        ant2gainarray=np.ones((nt*nbl))
-        A0arr=ms.getcol("ANTENNA1")
-        A1arr=ms.getcol("ANTENNA2")
-        print "Build squared gain array"
-#        for i in range(len(gains)):
-#            timemask=(tarray>gains[i][0])*(tarray<gains[i][1])
-#            for j in range(nAnt):
-#                mask1=timemask*(A0arr==j)
-#                mask2=timemask*(A1arr==j)
-#                ant1gainarray[mask1]=np.abs(np.nanmean(gains[i][3][0,j]))
-#                ant2gainarray[mask2]=np.abs(np.nanmean(gains[i][3][0,j]))
-#            PrintProgress(i,len(gains))
-#        np.save(msname+"/ant1gainarray",ant1gainarray)
-#        np.save(msname+"/ant2gainarray",ant2gainarray)
-        ant1gainarray=np.load(msname+"/ant1gainarray.npy")
-        ant2gainarray=np.load(msname+"/ant2gainarray.npy")
-#        ant1gainarray1=np.ones((nt,nbl,nchan))
-#        ant2gainarray1=np.ones((nt,nbl,nchan))
-#        for i in range(nchan):
-#            ant1gainarray1[:,:,i]=ant1gainarray**2
-#            ant2gainarray1[:,:,i]=ant2gainarray**2
-        ant1gainarray1=ant1gainarray**2#1.reshape((nt*nbl,nchan))
-        ant2gainarray1=ant2gainarray**2#1.reshape((nt*nbl,nchan))
-        print 
-        if gainfile[-3:]==".h5":
-            print "Assume reading losoto h5parm file"
-            
-
+def readGainFile(gainfile,ms,nt,nchan,nbl,tarray,nAnt,msname,phaseonly):
+    if phaseonly==True:
+        print "Assume amplitude gain values of 1 everywhere"
+        ant1gainarray1=np.ones((nt*nbl,nchan))
+        ant2gainarray1=np.ones((nt*nbl,nchan))
     else:
-        print "Assuming that gain amplitudes are same everywhe. If untrue, please convert gain file to either kMS numpy array or LoSoTo h5 format, as these are only ones currently supported."
-        ant1gainarray1=np.ones((nt*nbl))
-        ant2gainarray1=np.ones_like(ant1gainarray1)
-        print ant1gainarray1.shape
+        if gainfile[-4:]==".npz":
+            print "Assume reading a kMS sols file"
+            gainsnpz=np.load(gainfile)
+	    gains=gainsnpz["Sols"]
+            ant1gainarray=np.ones((nt*nbl,nchan))
+            ant2gainarray=np.ones((nt*nbl,nchan))
+            A0arr=ms.getcol("ANTENNA1")
+            A1arr=ms.getcol("ANTENNA2")
+            print "Build squared gain array"
+            for i in range(len(gains)):
+                timemask=(tarray>gains[i][0])*(tarray<gains[i][1])
+                for j in range(nAnt):
+                    mask1=timemask*(A0arr==j)
+                    mask2=timemask*(A1arr==j)
+                    for k in range(nchan):
+                        ant1gainarray[mask1,:]=np.abs(np.nanmean(gains[i][2][0,j,0]))#np.abs(np.nanmean(gains[i][3][0,j]))
+                        ant2gainarray[mask2,:]=np.abs(np.nanmean(gains[i][2][0,j,0]))#np.abs(np.nanmean(gains[i][3][0,j]))
+                PrintProgress(i,len(gains))
+            np.save(msname+"/ant1gainarray",ant1gainarray)
+            np.save(msname+"/ant2gainarray",ant2gainarray)
+            ant1gainarray=np.load(msname+"/ant1gainarray.npy")
+            ant2gainarray=np.load(msname+"/ant2gainarray.npy")
+            #        ant1gainarray1=np.ones((nt,nbl,nchan))
+            #        ant2gainarray1=np.ones((nt,nbl,nchan))
+            #        for i in range(nchan):
+            #            ant1gainarray1[:,:,i]=ant1gainarray**2
+            #            ant2gainarray1[:,:,i]=ant2gainarray**2
+            ant1gainarray1=ant1gainarray**2#1.reshape((nt*nbl,nchan))
+            ant2gainarray1=ant2gainarray**2#1.reshape((nt*nbl,nchan))
+            if gainfile[-3:]==".h5":
+                print "Assume reading losoto h5parm file"
+                import losoto
+                solsetName="sol000"
+                soltabName="amp000"
+                try:
+                    gfile=losoto.h5parm.openSoltab(gainfile,solsetName=solsetName,soltabName=soltabName)
+                except:
+                    print "Could not find amplitude gains in h5parm. Assuming gains of 1 everywhere."
+                    ant1gainarray1=np.ones((nt*nbl,nchan))
+                    ant2gainarray1=np.ones((nt*nbl,nchan))
+                    return ant1gainarray1,ant2gainarray1
+                freqs=table(msname+"/SPECTRAL_WINDOW").getcol("CHAN_FREQ")
+                gains=gfile.getValues()[0] # axes: pol, dir, ant, freq, times
+                gfreqs=gfile.getValues()[1]["freq"]
+                times=fgile.getValues()[1]["time"]
+                ant1gainarray=np.zeros((nt*nbl,nchan))
+                ant2gainarray=np.zeros((nt*nbl,nchan))
+                for j in range(nAnt):
+                    mask1=timemask*(A0arr==j)
+                    mask2=timemask*(A1arr==j)
+                    for k in range(nchan):
+                        if freqs[k] in gfreqs:
+                            freqmask=(gfreqs==k)
+                            ant1gainarray[mask1,k]=np.mean(gains[:,0,j,freqmask],axis=0)
+                            ant2gainarray[mask2,k]=np.mean(gains[:,0,j,freqmask],axis=0)
+
     return ant1gainarray1,ant2gainarray1
 
         
@@ -231,6 +278,7 @@ def readArguments():
     parser.add_argument("--gainfile",type=str,help="Name of the gain file you want to read to rebuild the calibration quality weights."+\
                         " If no file is given, equivalent to rebuilding weights for phase-only calibration.",required=False,default="")
     parser.add_argument("--uvcutkm",type=float,nargs=2,default=[0,2000],required=False,help="uvcut used during calibration, in km.")
+    parser.add_argument("--phaseonly",help="Use if calibration was phase-only; this means that gain information doesn't need to be read.",required=False,action="store_true")
 #    parser.add_argument("--nchansol",type=int,help="Solution interval, in channels, for your calibration",required=True)
     args=parser.parse_args()
     return vars(args)
@@ -246,9 +294,10 @@ if __name__=="__main__":
     colname     = args["colname"]
     gainfile    = args["gainfile"]
     uvcut       = args["uvcutkm"]
+    phaseonly   = args["phaseonly"]
     for msname in mslist:
         print "Finding time-covariance weights for: %s"%msname
-        covweights=CovWeights(MSName=msname,ntsol=ntsol,gainfile=gainfile,uvcut=uvcut)
+        covweights=CovWeights(MSName=msname,ntsol=ntsol,gainfile=gainfile,uvcut=uvcut,phaseonly=phaseonly)
         coefficients=covweights.FindWeights(tcorr=0,colname=colname)
         covweights.SaveWeights(coefficients,colname=colname,AverageOverChannels=True,tcorr=0)
         print "Total runtime: %f min"%((time.time()-start_time)/60.)
