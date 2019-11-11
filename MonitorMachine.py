@@ -13,6 +13,7 @@ def readArguments():
      parser.add_argument("command",metavar="COMMAND",type=str,help="Command over whose life you want to monitor your machine",nargs="+")
      parser.add_argument("--dt",help="Time interval over which to query machine for activity. Units of s",required=False,default=60,type=float)
      parser.add_argument("--diagdir",help="Directory where diagnostsic values & plots are stored. Default is Diagnostics",required=False,default="Diagnostics")
+     parser.add_argument("--plotonly",help="Set this option if you only want to remake the latest plots without overwriting them",required=FAlse,action="store_true")
      parser.add_argument("-v","--verbose",help="Be verbose, say everything program does. Default is False",required=False,action="store_true")
      args=parser.parse_args()
      return vars(args)
@@ -59,7 +60,7 @@ def PlotDiags(diagfile,title,diagnostic,verbose=False,ymax=1.):
          if np.max(times)>120:
                times=times/60.
          units="[h]"
-    diag=np.array(filecontent[0::2])
+    diag=np.array(filecontent[0::2]).astype(np.float)
     pylab.plot(times,diag)
     pylab.xlabel("Time since monitor launched %s"%units) 
     pylab.ylabel(diagnostic)
@@ -77,24 +78,26 @@ if __name__=="__main__":
     dt=args["dt"]
     comms=args["command"]
     diagdir=args["diagdir"]
+    plotonly=args["plotonly"]
     v=args["verbose"]
     command=""
     for i in comms:
         command+=" "+i
     if v: print "Launch command: %s"%command
-    # clean up diagnostic dir
-    ResetDiagFiles(diagdir)
-    if os.path.isdir(diagdir)==False: os.system("mkdir %s"%diagdir)
-    # start monitoring
-    proc=subprocess.Popen(command,shell=True).pid
-    if v: print "Process id you are monitoring: %i"%proc
-    loadfile=MakeDiagFile("loadavg.txt",diagdir)
-    memfile=MakeDiagFile("MemUse.txt",diagdir)
-    GetDiags(dt=dt,processid=proc)
-    # close diagnostic files
-    loadfile.close()
-    memfile.close()
-    # make plots
+    if plotonly=False:
+         # clean up diagnostic dir
+         ResetDiagFiles(diagdir)
+         if os.path.isdir(diagdir)==False: os.system("mkdir %s"%diagdir)
+         # start monitoring
+         proc=subprocess.Popen(command,shell=True).pid
+         if v: print "Process id you are monitoring: %i"%proc
+         loadfile=MakeDiagFile("loadavg.txt",diagdir)
+         memfile=MakeDiagFile("MemUse.txt",diagdir)
+         GetDiags(dt=dt,processid=proc)
+         # close diagnostic files
+         loadfile.close()
+         memfile.close()
+         # make plots
     if v: print "Process finished. Making diagnostic plots."
     loadfilename=diagdir+"/"+"loadavg.txt"
     memfilename=diagdir+"/"+"MemUse.txt"
