@@ -23,7 +23,6 @@ def findPrimaryBeam(hdul,fitstype="MIRIAD"):
     # function which takes hdul and returns size of restoring beam in arcsec. Assumes normalised gaussian with 2 fwhm params.
     test_list=hdul[0].header["HISTORY"]
     print hdul[0].header
-    stop
     if fitstype=="MIRIAD":
         # read header assuming miriad header format. FWHM given in units of arcsec
         fwhm = np.array(list(filter(lambda x: "fwhm" in x, hdul[0].header["HISTORY"]))[0].split("=")[1].split(",")).astype(float)
