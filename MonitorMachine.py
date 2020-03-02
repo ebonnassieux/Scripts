@@ -13,7 +13,7 @@ def readArguments():
      parser.add_argument("command",metavar="COMMAND",type=str,help="Command over whose life you want to monitor your machine",nargs="+")
      parser.add_argument("--dt",help="Time interval over which to query machine for activity. Units of s",required=False,default=60,type=float)
      parser.add_argument("--diagdir",help="Directory where diagnostsic values & plots are stored. Default is Diagnostics",required=False,default="Diagnostics")
-     parser.add_argument("--plotonly",help="Set this option if you only want to remake the latest plots without overwriting them",required=FAlse,action="store_true")
+     parser.add_argument("--plotonly",help="Set this option if you only want to remake the latest plots without overwriting them",required=False,action="store_true")
      parser.add_argument("-v","--verbose",help="Be verbose, say everything program does. Default is False",required=False,action="store_true")
      args=parser.parse_args()
      return vars(args)
