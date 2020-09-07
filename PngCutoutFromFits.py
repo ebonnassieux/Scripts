@@ -179,6 +179,8 @@ def MakeCutout(fitsfiles,overlay,RA,Dec,xDegrees=0.1,yDegrees=0.1,NSigmaVmax=10,
             pylab.ylabel("log(count)")            
             pylab.xlabel("Flux")
             i=i+1
+            temp.tick_labels.set_yformat("dd:mm:ss")
+            temp.tick_labels.set_xformat("hh:mm:ss")
         if reg!="":
             temp.show_regions(reg)
         if append=="":
