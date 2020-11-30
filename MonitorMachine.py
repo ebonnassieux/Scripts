@@ -13,8 +13,9 @@ def readArguments():
      parser.add_argument("command",metavar="COMMAND",type=str,help="Command over whose life you want to monitor your machine",nargs="+")
      parser.add_argument("--dt",help="Time interval over which to query machine for activity. Units of s",required=False,default=60,type=float)
      parser.add_argument("--diagdir",help="Directory where diagnostsic values & plots are stored. Default is Diagnostics",required=False,default="Diagnostics")
-     parser.add_argument("--plotonly",help="Set this option if you only want to remake the latest plots without overwriting them",required=FAlse,action="store_true")
+     parser.add_argument("--plotonly",help="Set this option if you only want to remake the latest plots without overwriting them",required=False,action="store_true")
      parser.add_argument("-v","--verbose",help="Be verbose, say everything program does. Default is False",required=False,action="store_true")
+     parser.add_argument("--noverwrite",help="Don't overwrite existing diagnostics files. Will create a new folder instead",required=False,action="store_true")
      args=parser.parse_args()
      return vars(args)
 
@@ -25,8 +26,17 @@ def MakeDiagFile(filename,diagdir="Diagnostics"):
     else:
         diagfile=open("%s/%s"%(diagdir,filename),"w+")
     return diagfile
-def ResetDiagFiles(diagdir="Diagnostics"):
-    os.system("rm -rf %s"%diagdir)
+def ResetDiagFiles(diagdir="Diagnostics",newdir=False):
+     if newdir==False:
+          os.system("rm -rf %s"%diagdir)
+     else:
+          iterit=diagdir[-1]
+          if iterit=="s":
+               iterit=1
+          else:
+               iterit=int(diagdir[-1])+1
+          diagdir+=str(iterit)
+          return diagdir
 # check pid
 def check_pid(pid):
     """ Check For the existence of a unix pid. """
@@ -80,13 +90,14 @@ if __name__=="__main__":
     diagdir=args["diagdir"]
     plotonly=args["plotonly"]
     v=args["verbose"]
+    makenewdir=args["noverwrite"]
     command=""
     for i in comms:
         command+=" "+i
     if v: print "Launch command: %s"%command
-    if plotonly=False:
+    if plotonly==False:
          # clean up diagnostic dir
-         ResetDiagFiles(diagdir)
+         diagdir=ResetDiagFiles(diagdir,makenewdir)
          if os.path.isdir(diagdir)==False: os.system("mkdir %s"%diagdir)
          # start monitoring
          proc=subprocess.Popen(command,shell=True).pid
