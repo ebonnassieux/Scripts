@@ -29,7 +29,7 @@ def HHMMSS2rad(HHMMSS):
     hang=float(hhstr)+float(mmstr)/60.+float(ssstr)/3600.
     # convert to rads
     #return hang*2.*np.pi/23.9345
-    return hang/11.96725*np.pi
+    return hang/12.*np.pi
 
 def DDMMSS2rad(DDMMSS):
     ddstr,mmstr,ssstr=DDMMSS.split(":")
@@ -38,12 +38,12 @@ def DDMMSS2rad(DDMMSS):
     return hang/180.*np.pi
 
     
-def rephaseMS(msname, targetradRA, targetradDEC,outputstr="rephased",fieldid=0,spw=0,v=False,rephase=True):
-    if v: print("Phase shifting %s"%msname)
+def rephaseMS(msname, targetradRA, targetradDEC,outputstr="rephased",fieldid=0,spw=0,verb=False,rephase=True):
+    if verb: print("Phase shifting %s"%msname)
     if outputstr!="":
         # make output measurement set
         outputmsname=msname[0:-3]+"."+outputstr+".ms"
-        if v: print("Creating output measurement set %s"%outputmsname)
+        if verb: print("Creating output measurement set %s"%outputmsname)
         tablecopy(msname,outputmsname,deep=True)
     # change phase centre
     t=table(outputmsname+"/FIELD",readonly=False,ack=False)
@@ -53,9 +53,9 @@ def rephaseMS(msname, targetradRA, targetradDEC,outputstr="rephased",fieldid=0,s
     phasecentr[fieldid,spw,0]=targetradRA
     phasecentr[fieldid,spw,1]=targetradDEC
     t.putcol("PHASE_DIR",phasecentr)
-    t.close()
+    t.close()   
     if rephase==True:
-        if v:print("Phase angle reference changed, phase shifting data")
+        if verb:print("Phase angle reference changed, phase shifting data")
         # get freq information
         t=table(msname+"/SPECTRAL_WINDOW")
         freq=t.getcol("REF_FREQUENCY")[0]
@@ -63,25 +63,60 @@ def rephaseMS(msname, targetradRA, targetradDEC,outputstr="rephased",fieldid=0,s
         t.close()
         # calculate phase shift to apply
         t=table(outputmsname,readonly=False,ack=False)
-        uv, vv, wv = t.getcol("UVW").T
-        deltal  = np.sin(targetradRA  - refradRA )
-        deltam  = np.sin(targetradDEC - refradDEC)
-        n1      = np.sqrt(1-deltal**2-deltam**2)-1
-        expvall =(-2j*np.pi*(deltal*uv+deltam*vv+n1*wv)).reshape((len(uv),1))
+        uvw = t.getcol("UVW")
+        ra   = refradRA
+        dec  = refradDEC
+        ra1  = targetradRA
+        dec1 = targetradDEC
+        #deltal  = np.sin(targetradRA  - refradRA )*np.cos((targetradDEC))# - refradDEC)
+        #deltam  = np.sin(targetradDEC - refradDEC)
+        x = np.sin(ra)*np.cos(dec)
+        y = np.cos(ra)*np.cos(dec)
+        z = np.sin(dec)
+        w = np.array([[x,y,z]]).T
+        x = -np.sin(ra)*np.sin(dec)
+        y = -np.cos(ra)*np.sin(dec)
+        z = np.cos(dec)
+        v = np.array([[x,y,z]]).T
+        x = np.cos(ra)
+        y = -np.sin(ra)
+        z = 0
+        u = np.array([[x,y,z]]).T
+        T = np.concatenate([u,v,w], axis = -1 )
+        TT=np.identity(3)
+        x1 = np.sin(ra1)*np.cos(dec1)
+        y1 = np.cos(ra1)*np.cos(dec1)
+        z1 = np.sin(dec1)
+        w1 = np.array([[x1,y1,z1]]).T
+        x1 = -np.sin(ra1)*np.sin(dec1)
+        y1 = -np.cos(ra1)*np.sin(dec1)
+        z1 = np.cos(dec1)
+        v1 = np.array([[x1,y1,z1]]).T
+        x1 = np.cos(ra1)
+        y1 = -np.sin(ra1)
+        z1 = 0
+        u1 = np.array([[x1,y1,z1]]).T
+        Tshift = np.concatenate([u1,v1,w1], axis=-1)
+        TT = np.dot(Tshift.T,T)
+        Phase=np.dot(np.dot((w-w1).T, T) , uvw.T)
+        #if rotateuvw==True:
+        uvw[:]=np.dot(uvw, TT.T)
+        t.putcol("UVW",uvw)
+        expvall =(2j*np.pi*Phase).reshape((uvw.shape[0],1))
         expvals =np.exp(np.dot(expvall,OneOverchanwl)).astype(np.clongdouble)
         # apply phase shift to visibilities
         listcols=t.colnames()
         for col in listcols:
             if "data" in col.lower():
                 if col!="DATA_DESC_ID":
-                    if v:print("Phase shifting %s"%col)
+                    if verb:print("Phase shifting %s"%col)
                     d=t.getcol(col)
                     for j in range(d.shape[2]):
                         d[:,:,j]=d[:,:,j]*expvals
                     t.putcol(col,d)
         t.close()
-    if v:print("Finished phase shifting visibilities")
-    if v: print("Rephased %s, output at %s"%(msname,outputmsname))
+    if verb:print("Finished phase shifting visibilities")
+    if verb: print("Rephased %s, output at %s"%(msname,outputmsname))
 
 if __name__=="__main__":
     args=readArguments()
