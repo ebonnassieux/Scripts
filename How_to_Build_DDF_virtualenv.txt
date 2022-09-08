@@ -1,0 +1,196 @@
+### TO BUILD THE SINGULARITY
+sudo singularity build --sandbox  imaging Singularity-DDF-Debian.def
+sudo singularity build imaging.sif imaging
+
+
+### BEFORE BUILDING VENV, ENTER SINGULARITY. GO TO WHERE YOU WANNA BUILD VENV, E.G.
+singularity shell --bind /scratch/WORK/ebonnassieux:/scratch/WORK/ebonnassieux imaging.sif
+
+
+### TO BUILD THE VENV
+
+
+export INSTALL_DIR="/scratch/WORK/P6_WORKDIR"; \
+export VENV_NAME="DDFpy3.10" ; \
+export VENV_DIR=$INSTALL_DIR/$VENV_NAME 
+
+
+
+# make venv
+cd $INSTALL_DIR
+python3.10 -m venv $VENV_NAME
+source $VENV_DIR/bin/activate
+pip install --upgrade pip
+cd $VENV_DIR
+mkdir sources
+cd sources
+export TMPDIR=$INSTALL_DIR/tmp
+mkdir $TMPDIR
+
+# data
+cd $VENV_DIR/sources
+mkdir casacore-data; cd casacore-data
+rsync -avz rsync://casa-rsync.nrao.edu/casa-data .
+echo measures.directory: $VENV_DIRsources/casacore-data/ > ~/.casarc
+
+pip install numpy=1.21
+# casacore
+# git checkout --detach ee0828dd0
+cd $VENV_DIR/sources
+git clone https://github.com/casacore/casacore.git
+cd casacore
+mkdir build
+cd build
+cmake ..  -DUSE_FFTW3=ON -DDATA_DIR=$VENV_DIR/sources/casacore-data/ -DUSE_OPENMP=ON -DUSE_HDF5=ON -DBUILD_PYTHON=OFF -DBUILD_PYTHON3=ON \
+-DUSE_THREADS=ON -DBUILD_TESTING=0 -DCMAKE_INSTALL_PREFIX=$VENV_DIR
+make -j 50; make install
+
+
+# python-casacore
+pip install python-casacore
+
+# everybeam
+pip install sphinx sphinx_rtd_theme breathe myst-parser
+cd $VENV_DIR/sources
+git clone --recursive -j4 https://git.astron.nl/RD/EveryBeam.git
+cd EveryBeam/
+mkdir build
+cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=$VENV_DIR -DCASACORE_ROOT_DIR=$VENV_DIR -DBUILD_WITH_PYTHON=ON
+make -j 50; make install
+
+
+pip install wheel
+pip install scipy
+pip install pybind11
+pip install Polygon3
+pip install numba
+pip install tables
+pip install meqtrees-cattery
+pip install nenupy
+
+# llvm
+cd $VENV_DIR/sources
+git clone https://github.com/llvm/llvm-project.git
+cd llvm-project/llvm; mkdir build; cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=$VENV_DIR
+make -j 50; make install
+
+# most of casarest; should fix installing the fourth component but requires Timba
+### relevant command will be:
+### make -j 45 casa_synthesis  ; cmake -DCOMPONENT=casa_synthesis   -P cmake_install.cmake
+cd $VENV_DIR/sources
+git clone https://github.com/casacore/casarest
+cd casarest; mkdir build; cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=$VENV_DIR -DCASACORE_ROOT_DIR=$VENV_DIR
+make -j 45 casa_msvis      ; cmake -DCOMPONENT=casa_msvis       -P cmake_install.cmake
+make -j 45 casa_components ; cmake -DCOMPONENT=casa_components  -P cmake_install.cmake
+make -j 45 casa_calibration; cmake -DCOMPONENT=casa_calibration -P cmake_install.cmake
+
+
+
+# ddfacet
+cd $VENV_DIR/sources
+git clone https://github.com/cyriltasse/DDFacet
+cd DDFacet
+git checkout NenuBeam
+cd ..
+pip install  -e DDFacet
+cd DDFacet
+python setup.py build
+python setup.py install --prefix=MyDDF
+
+# killms
+cd $VENV_DIR/sources
+git clone git@github.com:cyriltasse/killMS.git
+cd killMS
+git checkout MasterPython3
+cd ..
+pip install --user -e killMS
+cd killMS
+python setup.py build
+python setup.py install --prefix=MykMS
+
+
+# dysco
+
+
+
+# aoflagger
+cd $VENV_DIR/sources
+git clone https://gitlab.com/aroffringa/aoflagger.git
+cd aoflagger
+mkdir build; cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=$VENV_DIR -DCASACORE_ROOT_DIR=$VENV_DIR
+make -j 45; make install
+
+# install DP3
+### todo: add IDG optional prereq first.
+cd $VENV_DIR/sources
+git clone https://github.com/lofar-astron/DP3.git
+cd DP3
+mkdir build; cd builde
+cmake .. -DCMAKE_INSTALL_PREFIX=$VENV_DIR -DCASACORE_ROOT_DIR=$VENV_DIR
+make -j 45; make install
+
+# install wsclean
+cd $VENV_DIR/sources
+git clone https://gitlab.com/aroffringa/wsclean.git
+cd wsclean
+mkdir build; cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=$VENV_DIR -DCASACORE_ROOT_DIR=$VENV_DIR
+make -j 45; make install
+
+### BELOW THIS GO AT YOUR PERIL: CLASSFITSBEAM GARBAGE. DISABLE IT MANUALLY IN DDF.
+
+
+
+# export CASACORE_LDPATH="/data/etienne.bonnassieux/DDFpy3/sources/dysco/build:"
+
+
+# casarest (prereq for timba)
+cd $VENV_DIR/sources
+wget https://github.com/casacore/casarest/archive/refs/tags/v1.8.1.tar.gz
+tar xvf v1.8.1.tar.gz 
+mkdir casarest-1.8.1/build; cd casarest-1.8.1/build
+cmake .. -DCMAKE_INSTALL_PREFIX=$VENV_DIR -DCASACORE_ROOT_DIR=$VENV_DIR -DCFITSIO_INCLUDE_DIR=/usr/include -DCASACORE_INCLUDE_DIR=$VENV_DIR/include -DCFITSIO_INCLUDE_DIR=/usr/include/cfitsio/
+
+
+
+
+
+
+cd $VENV_DIR/sources
+git clone https://github.com/casacore/casarest
+cd casarest; mkdir build; cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=$VENV_DIR -DCASACORE_ROOT_DIR=$VENV_DIR
+make -j 45 casa_msvis      ; cmake -DCOMPONENT=casa_msvis       -P cmake_install.cmake
+make -j 45 casa_components ; cmake -DCOMPONENT=casa_components  -P cmake_install.cmake
+make -j 45 casa_calibration; cmake -DCOMPONENT=casa_calibration -P cmake_install.cmake
+
+cd synthesis
+git clone https://github.com/ratt-ru/lwimager
+cd lwimager
+mkdir build; cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=$VENV_DIR -DCASACORE_ROOT_DIR=$VENV_DIR -DCFITSIO_INCLUDE_DIR=/usr/include -DCASACORE_INCLUDE_DIR=$VENV_DIR/include
+make -j 45; make install
+
+cd $VENV_DIR/sources/casarest/build
+make -j 45 casa_synthesis  ; cmake -DCOMPONENT=casa_synthesis   -P cmake_install.cmake
+
+# blitz (prereq for timba)
+cd $VENV_DIR/sources
+git clone https://github.com/blitzpp/blitz
+mkdir; cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=$VENV_DIR
+make lib
+make install
+
+# timba
+cd $VENV_DIR/sources
+git clone https://github.com/ratt-ru/meqtrees-timba.git
+cd meqtrees-timba
+mkdir build
+cd build
+cmake .. -DCASACORE_ROOT_DIR=$VENV_DIR -DDBM_INCLUDE_DIR=/usr/include/ -DDBM_LIBRARIES=/usr/lib64/libgdbm.so -DCASAREST_ROOT_DIR=$VENV_DIR -DBLITZ_INCLUDE_DIR=$VENV_DIR -DBLITZ_INCLUDE_DIR2=$VENV_DIR
+make -j 45; make install
