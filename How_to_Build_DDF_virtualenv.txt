@@ -4,13 +4,13 @@ sudo singularity build imaging.sif imaging
 
 
 ### BEFORE BUILDING VENV, ENTER SINGULARITY. GO TO WHERE YOU WANNA BUILD VENV, E.G.
-singularity shell --bind /scratch/WORK/ebonnassieux:/scratch/WORK/ebonnassieux imaging.sif
+singularity shell --bind $PWD:$PWD
 
 
 ### TO BUILD THE VENV
 
 
-export INSTALL_DIR="/scratch/WORK/P6_WORKDIR"; \
+export INSTALL_DIR=$PWD
 export VENV_NAME="DDFpy3.10" ; \
 export VENV_DIR=$INSTALL_DIR/$VENV_NAME 
 
@@ -33,7 +33,7 @@ mkdir casacore-data; cd casacore-data
 rsync -avz rsync://casa-rsync.nrao.edu/casa-data .
 echo measures.directory: $VENV_DIRsources/casacore-data/ > ~/.casarc
 
-pip install numpy=1.21
+pip install numpy==1.21
 # casacore
 # git checkout --detach ee0828dd0
 cd $VENV_DIR/sources
@@ -113,7 +113,12 @@ python setup.py install --prefix=MykMS
 
 
 # dysco
-
+cd $VENV_DIR/sources
+git clone https://github.com/aroffringa/dysco.git
+cd dysco
+mkdir build; cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=$VENV_DIR -DCASACORE_ROOT_DIR=$VENV_DIR
+make -j 45; make install
 
 
 # aoflagger
