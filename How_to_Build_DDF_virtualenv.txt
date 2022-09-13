@@ -4,16 +4,15 @@ sudo singularity build imaging.sif imaging
 
 
 ### BEFORE BUILDING VENV, ENTER SINGULARITY. GO TO WHERE YOU WANNA BUILD VENV, E.G.
-singularity shell --bind $PWD:$PWD
+singularity shell --bind $PWD:$PWD imaging.sif
 
 
 ### TO BUILD THE VENV
 
 
 export INSTALL_DIR=$PWD
-export VENV_NAME="DDFpy3.10" ; \
+export VENV_NAME="DDFpy3.10" 
 export VENV_DIR=$INSTALL_DIR/$VENV_NAME 
-
 
 
 # make venv
@@ -33,7 +32,7 @@ mkdir casacore-data; cd casacore-data
 rsync -avz rsync://casa-rsync.nrao.edu/casa-data .
 echo measures.directory: $VENV_DIRsources/casacore-data/ > ~/.casarc
 
-pip install numpy==1.21
+pip install numpy
 # casacore
 # git checkout --detach ee0828dd0
 cd $VENV_DIR/sources
@@ -73,7 +72,7 @@ pip install nenupy
 cd $VENV_DIR/sources
 git clone https://github.com/llvm/llvm-project.git
 cd llvm-project/llvm; mkdir build; cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=$VENV_DIR
+cmake .. -DCMAKE_INSTALL_PREFIX=$VENV_DIR -DCMAKE_BUILD_TYPE=RelWithDebInfo
 make -j 50; make install
 
 # most of casarest; should fix installing the fourth component but requires Timba
