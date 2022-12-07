@@ -1,5 +1,5 @@
 import os
-from pyrap.tables import table
+from casacore.tables import table
 import numpy as np
 import pylab
 from numpy import ma
@@ -42,14 +42,14 @@ class CovWeights:
         warnings.filterwarnings("ignore")
         warnings.filterwarnings("default")
         if "RESIDUAL_DATA" not in ms.colnames():
-            print "RESIDUAL_DATA column not in measurement set: creating it and filling with RESIDUAL_DATA"
+            print("RESIDUAL_DATA column not in measurement set: creating it and filling with RESIDUAL_DATA")
             desc=ms.getcoldesc("CORRECTED_DATA")
             desc["name"]="RESIDUAL_DATA"
             desc['comment']=desc['comment'].replace(" ","_")
             ms.addcols(desc)
-            ms.putcol("RESIDUAL_DATA","CORRECTED_DATA")
+            ms.putcol("RESIDUAL_DATA",ms.getcol("CORRECTED_DATA"))
         flags=ms.getcol("FLAG")
-        print "Please ensure that RESIDUAL_DATA or CORRECTED_DATA contains residual visibilities from complete skymodel subtraction."
+        print("Please ensure that RESIDUAL_DATA or CORRECTED_DATA contains residual visibilities from complete skymodel subtraction.")
         residualdata=ms.getcol("RESIDUAL_DATA")
         flags=ms.getcol("FLAG")
         # apply uvcut
@@ -63,7 +63,7 @@ class CovWeights:
         # initialise
         nChan=residualdata.shape[1]
         nPola=residualdata.shape[2]
-        nt=residualdata.shape[0]/nbl
+        nt=int(residualdata.shape[0]/nbl)
         # reshape antennas and data columns
         residualdata=residualdata.reshape((nt,nbl,nChan,nPola))
         # average residual data within calibration cells
@@ -73,7 +73,7 @@ class CovWeights:
         A1=A1.reshape((nt,nbl))
 #        ant1=np.arange(nAnt)
 #        CoeffArray=np.zeros((nt,nAnt))
-#        print "Begin calculating antenna-based coefficients"
+#        print("Begin calculating antenna-based coefficients")
 #        for i,t_i in enumerate(times):
 #            indexmax=min(len(times)-1,i+self.ntSol)
 #            indexmin=max(0,i-self.ntSol)
@@ -91,12 +91,15 @@ class CovWeights:
 #            PrintProgress(i,nt)
 
 
-        if self.ntSol>1:
-            tspill=nt%self.ntSol
-            nt1=nt+self.ntSol-tspill
-            for i in range(nt1/self.ntSol):
-                for j in range(self.nfreqsol):
-                    residualdata[i*self.ntSol:(i+1)*self.ntSol,:,self.nfreqsol*j:(j+1)*nfreqsol,:]=np.mean(residualdata[i*self.ntSol:(i+1)*self.ntSol,:,:,:],axis=0)
+### TODO figure out if below is actually useful. Bugged at present
+#        if self.ntSol>1:
+#            tspill=nt%self.ntSol
+#            nt1=nt+self.ntSol-tspill
+#            for i in range(int(nt1/self.ntSol)):
+#                for j in range(self.nfreqsol):
+#                    print(residualdata[i*self.ntSol:(i+1)*self.ntSol,:,self.nfreqsol*j:(j+1)*nfreqsol,:].shape)
+#                    print(np.mean(residualdata[i*self.ntSol:(i+1)*self.ntSol,:,:,:],axis=0).shape)
+#                    residualdata[i*self.ntSol:(i+1)*self.ntSol,:,self.nfreqsol*j:(j+1)*nfreqsol,:]=np.mean(residualdata[i*self.ntSol:(i+1)*self.ntSol,:,:,:],axis=0)
         A0=A0.reshape((nt,nbl))
         A1=A1.reshape((nt,nbl))
         ant1=np.arange(nAnt)
@@ -113,9 +116,9 @@ class CovWeights:
         # antenna coefficient array
         CoeffArray=np.zeros((nt,nAnt,2))
         # start calculating the weights
-        print "Begin calculating antenna-based coefficients"
+        print("Begin calculating antenna-based coefficients")
         warnings.filterwarnings("ignore")
-        print "Find variance-only weights"
+        print("Find variance-only weights")
         for t_i in range(nt):
             # build weights for each antenna at time t_i
             for ant in ant1:
@@ -145,12 +148,12 @@ class CovWeights:
             coeffFilename=self.MSName+"/CoeffArray.ntsol%i.npy"%(ntsol)
         else:
             coeffFilename=self.MSName+"/CoeffArray.%s.ntsol%i.npy"%(colname,ntsol)
-        print "Save coefficient array as %s."%coeffFilename
+        print("Save coefficient array as %s."%coeffFilename)
         np.save(coeffFilename,CoeffArray)
         return CoeffArray
                         
     def SaveWeights(self,CoeffArray,colname=None,AverageOverChannels=True,tcorr=0):
-        print "Begin saving the data"
+        print("Begin saving the data")
         ms=table(self.MSName,readonly=False)
         # open antennas
         ants=table(ms.getkeyword("ANTENNA"))
@@ -161,12 +164,12 @@ class CovWeights:
         darray=ms.getcol("DATA")
         tvalues=np.array(sorted(list(set(tarray))))
         nt=tvalues.shape[0]
-        nbl=tarray.shape[0]/nt
+        nbl=int(tarray.shape[0]/nt)
         nchan=darray.shape[1]
         A0=np.array(ms.getcol("ANTENNA1").reshape((nt,nbl)))
         A1=np.array(ms.getcol("ANTENNA2").reshape((nt,nbl)))
         if colname in ms.colnames():
-            print "%s column already present; will overwrite"%colname
+            print("%s column already present; will overwrite"%colname)
         else:
             W=np.ones((nt*nbl,nchan))
             desc=ms.getcoldesc("IMAGING_WEIGHT")
@@ -177,7 +180,7 @@ class CovWeights:
         # create weight array
         w=np.zeros((nt,nbl,nchan))
         ant1=np.arange(nAnt)
-        print "Fill weights array"
+        print("Fill weights array")
         A0ind=A0[0,:]
         A1ind=A1[0,:]
         warnings.filterwarnings("ignore")
@@ -200,28 +203,41 @@ class CovWeights:
         w[np.isinf(w)]=0
         # normalise
         w=w/np.mean(w)
+        # check shape of column we are writing to
+        if "WEIGHT_SPECTRUM" in ms.colnames():
+            if ms.getcol(colname).shape==ms.getcol("WEIGHT_SPECTRUM").shape:
+                w1=np.zeros_like(ms.getcol("WEIGHT_SPECTRUM"))
+                for i in range(4):
+                    w1[:,:,i]=w
+        w=w1
+        
+        if ms.getcol(colname).shape[-1]==4:
+            
+            # We are writing to a weight col of shape (nbl*nt, nchan, npol) i.e. WEIGHT_SPECTRUM style
+            # and not of shape (nbl*nt, nchan) i.e. IMAGING_WEIGHT style
+            print()
         # save in weights column
         if colname!=None:
             ms.putcol(colname,w)
-        else: print "No colname given, so weights not saved in MS."
+        else: print("No colname given, so weights not saved in MS.")
         ants.close()
         ms.close()
 
 def readGainFile(gainfile,ms,nt,nchan,nbl,tarray,nAnt,msname,phaseonly):
-    if phaseonly==True:
-        print "Assume amplitude gain values of 1 everywhere"
+    if phaseonly==True or gainfile=="":
+        print("Assume amplitude gain values of 1 everywhere")
         ant1gainarray1=np.ones((nt*nbl,nchan))
         ant2gainarray1=np.ones((nt*nbl,nchan))
     else:
         if gainfile[-4:]==".npz":
-            print "Assume reading a kMS sols file"
+            print("Assume reading a kMS sols file")
             gainsnpz=np.load(gainfile)
-	    gains=gainsnpz["Sols"]
+            gains=gainsnpz["Sols"]
             ant1gainarray=np.ones((nt*nbl,nchan))
             ant2gainarray=np.ones((nt*nbl,nchan))
             A0arr=ms.getcol("ANTENNA1")
             A1arr=ms.getcol("ANTENNA2")
-            print "Build squared gain array"
+            print("Build squared gain array")
             for i in range(len(gains)):
                 timemask=(tarray>gains[i][0])*(tarray<gains[i][1])
                 for j in range(nAnt):
@@ -243,14 +259,14 @@ def readGainFile(gainfile,ms,nt,nchan,nbl,tarray,nAnt,msname,phaseonly):
             ant1gainarray1=ant1gainarray**2#1.reshape((nt*nbl,nchan))
             ant2gainarray1=ant2gainarray**2#1.reshape((nt*nbl,nchan))
             if gainfile[-3:]==".h5":
-                print "Assume reading losoto h5parm file"
+                print("Assume reading losoto h5parm file")
                 import losoto
                 solsetName="sol000"
                 soltabName="amp000"
                 try:
                     gfile=losoto.h5parm.openSoltab(gainfile,solsetName=solsetName,soltabName=soltabName)
                 except:
-                    print "Could not find amplitude gains in h5parm. Assuming gains of 1 everywhere."
+                    print("Could not find amplitude gains in h5parm. Assuming gains of 1 everywhere.")
                     ant1gainarray1=np.ones((nt*nbl,nchan))
                     ant2gainarray1=np.ones((nt*nbl,nchan))
                     return ant1gainarray1,ant2gainarray1
@@ -266,12 +282,12 @@ def readGainFile(gainfile,ms,nt,nchan,nbl,tarray,nAnt,msname,phaseonly):
                     for k in range(nchan):
                         if freqs[k] in gfreqs:
                             freqmask=(gfreqs==k)
-                            ant1gainarray[mask1,k]=np.mean(gains[:,0,j,freqmask],axis=0)
-                            ant2gainarray[mask2,k]=np.mean(gains[:,0,j,freqmask],axis=0)
+                            ant1gainarray1[mask1,k]=np.mean(gains[:,0,j,freqmask],axis=0)**2
+                            ant2gainarray1[mask2,k]=np.mean(gains[:,0,j,freqmask],axis=0)**2
             else:
-                print "Gain file type not currently supported. Assume all gain amplitudes are 1."
-                ant1gainarray=np.ones((nt*nbl,nchan))
-                ant2gainarray=np.ones((nt*nbl,nchan))
+                print("Gain file type not currently supported. Assume all gain amplitudes are 1.")
+                ant1gainarray1=np.ones((nt*nbl,nchan))
+                ant2gainarray1=np.ones((nt*nbl,nchan))
                                 
 
     return ant1gainarray1,ant2gainarray1
@@ -323,8 +339,8 @@ if __name__=="__main__":
     phaseonly   = args["phaseonly"]
     normalise   = args["normalise"]
     for msname in mslist:
-        print "Finding time-covariance weights for: %s"%msname
+        print("Finding time-covariance weights for: %s"%msname)
         covweights=CovWeights(MSName=msname,ntsol=ntsol,gainfile=gainfile,uvcut=uvcut,phaseonly=phaseonly,norm=normalise)
         coefficients=covweights.FindWeights(tcorr=0,colname=colname)
         covweights.SaveWeights(coefficients,colname=colname,AverageOverChannels=True,tcorr=0)
-        print "Total runtime: %f min"%((time.time()-start_time)/60.)
+        print("Total runtime: %f min"%((time.time()-start_time)/60.))
