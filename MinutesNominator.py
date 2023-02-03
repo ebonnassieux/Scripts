@@ -92,6 +92,13 @@ def ASCIIwizardHat():
 
 
 if __name__=="__main__":
-    ASCIIwizardHat()
-    filename=sys.argv[1]
-    DropName(filename)
+    if len(sys.argv)<2:
+        print("")
+        print("Correct call for the script:")
+        print("python3 MinutesNominator.py listofnames.txt")
+        print("")
+        print("Try again")
+    else:
+        ASCIIwizardHat()
+        filename=sys.argv[1]
+        DropName(filename)
