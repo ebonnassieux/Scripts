@@ -80,7 +80,7 @@ def MakeCutout(fitsfiles,overlay,RA,Dec,xDegrees=0.1,yDegrees=0.1,NSigmaVmax=10,
             vmax=NSigmaVmax
     else:
         # calculate noise in first image, use that as a reference
-        if verb: print "Calculating noise in %s, use as reference for all images"%fitsfiles[0]
+        if verb: print("Calculating noise in %s, use as reference for all images"%fitsfiles[0])
         im=image(fitsfiles[0])
         d=im.getdata()
         ind=np.int64(np.random.rand(10000)*d.size)
@@ -93,10 +93,10 @@ def MakeCutout(fitsfiles,overlay,RA,Dec,xDegrees=0.1,yDegrees=0.1,NSigmaVmax=10,
         else:
             vmin=NSigmaVmin
             vmax=NSigmaVmax
-        print "noise is ", std
+        print("noise is ", std)
 
     if histogram:
-        if verb: print "Initialising overall histogram bounds"
+        if verb: print("Initialising overall histogram bounds")
         blarg=[]
         blorg=[]
         narray=[]
@@ -114,14 +114,14 @@ def MakeCutout(fitsfiles,overlay,RA,Dec,xDegrees=0.1,yDegrees=0.1,NSigmaVmax=10,
         maxval=np.max(blarg)
         ymax=1.1*np.max(blorg)
         pylab.clf()
-        if verb: print "Initialisation complete: making cutouts"
+        if verb: print("Initialisation complete: making cutouts")
     i=0
     if histogram:
         ytickvals=np.arange(6)/5.*np.log(np.max(narray))
         ytickvals=(10*ytickvals).astype(np.int)/10.
     if overlay!=None:
 #        overlay=CheckB1950toJ2000(overlay,verb=verb)
-        if verb: "Making overlay from file: %s"%overlay
+        if verb:("Making overlay from file: %s"%overlay)
         hduOverlay=fits.open(overlay)
         
 
@@ -130,8 +130,9 @@ def MakeCutout(fitsfiles,overlay,RA,Dec,xDegrees=0.1,yDegrees=0.1,NSigmaVmax=10,
         test=pylab.figure(figsize=(8,8))
         ax=pylab.subplot(111)
         temp = FITSFigure(ffile,slices=[pol,chan],figure=test,subplot=[0,0,1,1])
+        fix_aplpy_fits(temp)
         temp.show_grayscale(vmin=vmin,vmax=vmax,invert=invertCmap)
-        print RAdeg,Decdeg
+#        print RAdeg,Decdeg
         temp.recenter(RAdeg,Decdeg,width=yDegrees,height=xDegrees)
         temp.add_colorbar()
         temp.colorbar.set_width(0.2)
@@ -154,16 +155,16 @@ def MakeCutout(fitsfiles,overlay,RA,Dec,xDegrees=0.1,yDegrees=0.1,NSigmaVmax=10,
             A=pixelvals.flat[ind]
             A=A[np.isnan(A)==0]
             overstd=np.std(A)
-            print "overstd is",overstd
+            print("overstd is",overstd)
             pixelmaxval=np.max(pixelvals)
-            print pixelmaxval
+#            print pixelmaxval
             levelmax=np.log10(pixelmaxval)
-            print levelmax
+#            print levelmax
             minval=min(overlaymin*overstd,0.6*pixelmaxval)
-            print "min level val, minval in std, minval as frac of peak", minval,overlaymin*overstd,0.6*pixelmaxval
+            print("min level val, minval in std, minval as frac of peak", minval,overlaymin*overstd,0.6*pixelmaxval)
             levelmin=np.log10(minval)
             levels=10**(np.linspace(levelmin,levelmax,nlevels))
-            print levels
+#            print levels
             temp.show_contour(hduOverlay,linewidths=1,cmap="autumn",origin="lower",levels=levels,alpha=0.4,overlap=True,slices=[0,ochan])
         if histogram:
             rectsuperplot=pylab.axes([-0.19,0.79,0.515,0.18])
@@ -185,20 +186,29 @@ def MakeCutout(fitsfiles,overlay,RA,Dec,xDegrees=0.1,yDegrees=0.1,NSigmaVmax=10,
             temp.show_regions(reg)
         if append=="":
             temp.save("./"+ffile.split("/")[-1]+".png")
-            print "Created new cutout: %s"%("./"+ffile.split("/")[-1]+".png")
+            print("Created new cutout: %s"%("./"+ffile.split("/")[-1]+".png"))
         else:
             #temp.save("./"+ffile.split("/")[-1]+append+".png")
             #print "Created new cutout: %s"%("./"+ffile.split("/")[-1]+append+".png")
             temp.save("./"+append+".png")
-            print "Created new cutout: %s"%("./"+append+".png")
+            print("Created new cutout: %s"%("./"+append+".png"))
         temp.close()
-    print "Done, thank you for using this script"
+    print("Done, thank you for using this script")
             
 def HHMMSStoDegrees(HHMMSS):
    # convert HHMMSS string to angular value float
    HH,MM,SS=np.array(HHMMSS.split(":")).astype(float)
    degrees=HH+MM/60.+SS/3600.
    return degrees
+
+def fix_aplpy_fits(aplpy_obj, dropaxis=2):
+    """This removes the degenerated dimensions in APLpy 2.X...
+    The input must be the object returned by aplpy.FITSFigure().
+    `dropaxis` is the index where to start dropping the axis (by default it assumes the 3rd,4th place).
+    """
+    temp_wcs = aplpy_obj._wcs.dropaxis(dropaxis)
+    temp_wcs = temp_wcs.dropaxis(dropaxis)
+    aplpy_obj._wcs = temp_wcs
    
 
 def CheckB1950toJ2000(filename,verb=False):
@@ -219,7 +229,7 @@ def CheckB1950toJ2000(filename,verb=False):
     if hdulist[0].header["EPOCH"]==1950.:
         b1950ra=hdulist[0].header[RAkey]
         b1950dec=hdulist[0].header[DECkey]
-        if verb: print "Converting %s into a new icrs-WCS file"%filename
+        if verb: print("Converting %s into a new icrs-WCS file"%filename)
         hdulist[0].header["EPOCH"]=2000.0
         c=SkyCoord(hdulist[0].header[RAkey],hdulist[0].header[DECkey],frame="fk4",unit="deg")
         cJ2000=c.transform_to("icrs")
@@ -229,7 +239,7 @@ def CheckB1950toJ2000(filename,verb=False):
         hdulist[0].header[crval1key]=cJ2000.ra.deg
         hdulist[0].header[crval2key]=cJ2000.dec.deg
         newfilename=filename[:-4]+"J2000.fits"
-        if verb: print "Saving icrs file as: %s"%newfilename
+        if verb: print("Saving icrs file as: %s"%newfilename)
         hdulist.writeto(newfilename,clobber=True)
         return newfilename
     else:
@@ -265,20 +275,20 @@ if __name__=="__main__":
         if pol==j:
             polnum=i
     if verb:
-        print "Making cutouts of size %2.1f' centred at (RA=%s,Dec=%s) for the following files:"%(size,RA,Dec)
+        print("Making cutouts of size %2.1f' centred at (RA=%s,Dec=%s) for the following files:"%(size,RA,Dec))
     if normalise:
         normfiles=[]
     testvar=0
     normvals=[6.7053,3.79805]
     for i in fitsfiles:        
         if normalise:
-            if verb: "Making normalised fits images, then cutouts"
+            if verb: print("Making normalised fits images, then cutouts")
             data,header=fits.getdata(i,header=True)
             data=data/normvals[testvar]#np.amax(data)#,dtype=np.float64)
             testvar=testvar+1
             fits.writeto(i[:-4]+"normalised.fits",data,header,clobber=True)
             normfiles.append(i[:-4]+"normalised.fits")
-        print i
+        print(i)
 
         #    stop
     if normalise:
