@@ -13,7 +13,7 @@ import glob
 from pyrap.images import image
 import warnings
 warnings.filterwarnings("ignore")
-import pylab
+import matplotlib.pyplot as pylab
 from astropy.io import fits
 import matplotlib as plt
 from astropy.coordinates import SkyCoord
