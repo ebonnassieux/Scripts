@@ -10,8 +10,10 @@ import math
 import argparse
 
 class CovWeights:
-    def __init__(self,MSName,ntsol=1,nfreqsol=1,SaveDataProducts=1,uvcut=[0,2000],gainfile=None,phaseonly=True,norm=False, \
-                 modelcolname="MODEL_DATA",datacolname="DATA",weightscolname="IMAGING_WEIGHT"):
+    def __init__(self, MSName, ntsol=1, nfreqsol=1, SaveDataProducts=1, \
+                 uvcut=[0,2000], gainfile=None, phaseonly=True,norm=False, \
+                 modelcolname="MODEL_DATA", datacolname="DATA", \
+                 weightscolname="IMAGING_WEIGHT"):
         if MSName[-1]=="/":
             self.MSName = MSName[0:-1]
         else:
@@ -42,19 +44,19 @@ class CovWeights:
         self.weightscolname   = weightscolname
         if self.modelcolname in self.colnames and self.datacolname in self.colnames:
             print("Creating RESIDUAL_DATA equivalent from %s - %s"%(self.datacolname,self.modelcolname))
-            self.residualdata=ms.getcol(self.datacolname)-ms.getcol(self.datacolname)
+            self.residualdata = ms.getcol(self.datacolname)-ms.getcol(self.datacolname)
         elif "RESIDUAL_DATA" in self.colnames:
             print("Reading RESIDUAL_DATA directly from MS")
-            self.residualdata=self.ms.getcol("RESIDUAL_DATA")
+            self.residualdata = self.ms.getcol("RESIDUAL_DATA")
         else:
             print("Model, data colnames not present; RESIDUAL_DATA column not in measurement set: reading CORRECTED_DATA")
-            self.residualdata=self.ms.getcol("CORRECTED_DATA")
-        self.nChan=self.residualdata.shape[1]
-        self.nPola=self.residualdata.shape[2]
-        self.nt=int(self.residualdata.shape[0]/self.nbl)
-        self.flags=self.ms.getcol("FLAG")
+            self.residualdata = self.ms.getcol("CORRECTED_DATA")
+        self.nChan            = self.residualdata.shape[1]
+        self.nPola            = self.residualdata.shape[2]
+        self.nt               = int(self.residualdata.shape[0]/self.nbl)
+        self.flags            = self.ms.getcol("FLAG")
         # apply uvcut
-        self.uvlen=np.sqrt(self.u**2+self.v**2)
+        self.uvlen            = np.sqrt(self.u**2+self.v**2)
         self.flags[self.uvlen>self.uvcut[1]]=1
         self.flags[self.uvlen<self.uvcut[0]]=1
         # apply flags to data
@@ -64,15 +66,14 @@ class CovWeights:
         self.ms.close()
 
     def FindWeights(self):
-        warnings.filterwarnings("ignore")
-        warnings.filterwarnings("default")
         # reshape antennas and data columns
-        self.residualdata=self.residualdata.reshape((self.nt,self.nbl,self.nChan,self.nPola))
+        self.residualdata     = self.residualdata.reshape((self.nt,self.nbl,self.nChan,self.nPola))
+        self.flags            = self.flags.reshape((self.nt,self.nbl,self.nChan,self.nPola))
         # average residual data within calibration cells
         ### TODO: the averaging should be done later; try using a filter instead of this ###
-        self.A0=self.A0.reshape((self.nt,self.nbl))
-        self.A1=self.A1.reshape((self.nt,self.nbl))
-        self.ant1=np.arange(self.nAnt)
+        self.A0               = self.A0.reshape((self.nt,self.nbl))
+        self.A1               = self.A1.reshape((self.nt,self.nbl))
+        self.ant1             = np.arange(self.nAnt)
         
 #        ant1=np.arange(nAnt)
 #        CoeffArray=np.zeros((nt,nAnt))
@@ -104,24 +105,34 @@ class CovWeights:
 #                    print(np.mean(residualdata[i*self.ntSol:(i+1)*self.ntSol,:,:,:],axis=0).shape)
 #                    residualdata[i*self.ntSol:(i+1)*self.ntSol,:,self.nfreqsol*j:(j+1)*nfreqsol,:]=np.mean(residualdata[i*self.ntSol:(i+1)*self.ntSol,:,:,:],axis=0)
 
-        residuals=np.zeros_like(self.residualdata,dtype=np.complex64)
+        residuals             = np.zeros_like(self.residualdata,dtype=np.complex64)
         # remove crosspols
-        residuals[:,:,:,0]=self.residualdata[:,:,:,0]
-        residuals[:,:,:,1]=self.residualdata[:,:,:,3]
+        residuals[:,:,:,0]    = self.residualdata[:,:,:,0]
+        residuals[:,:,:,1]    = self.residualdata[:,:,:,3]
         # antenna coefficient array
-        self.CoeffArray=np.zeros((self.nt,self.nAnt,2))
+        self.CoeffArray       = np.zeros((self.nt,self.nAnt,2))
         # start calculating the weights
         print("Begin calculating antenna-based coefficients")
+        flagweights = (1-self.flags).astype(bool)
         for t_i in range(self.nt):
             # build weights for each antenna at time t_i
             for ant in self.ant1:
                 # set of vis for baselines ant-ant_i
-                set1=np.where(self.A0[t_i]==ant)[0]
+                set1        = np.where(self.A0[t_i]==ant)[0]
                 # set of vis for baselines ant_i-ant
-                set2=np.where(self.A1[t_i]==ant)[0]
-                self.CoeffArray[t_i,ant,0] = np.mean( np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:]) * np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:]).conj())#, \
-#                                                         weights = 1#)flagweights)
-                self.CoeffArray[t_i,ant,1] = np.abs( np.mean(np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:])) )
+                set2        = np.where(self.A1[t_i]==ant)[0]
+                # build boolean weighting array from flags
+                AntResids   = np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:])
+                
+                if np.sum(np.abs(AntResids))>0:
+                    AbsResids = np.abs(AntResids)
+                    self.CoeffArray[t_i,ant,0] = np.average( np.real( AntResids * AntResids.conj() ), \
+                                                             weights = AbsResids.astype(bool) )
+                    self.CoeffArray[t_i,ant,1] = np.average( AbsResids,
+                                                             weights = AbsResids.astype(bool) )
+                else:
+                    self.CoeffArray[t_i,ant,0] = 0
+                    self.CoeffArray[t_i,ant,1] = 0
             PrintProgress(t_i,self.nt)
         warnings.filterwarnings("default")
         for i in range(self.nAnt):
@@ -130,6 +141,11 @@ class CovWeights:
             # normalise per antenna
             if self.normalise==True:
                 self.CoeffArray[:,i,0]=self.CoeffArray[:,i,0]/self.CoeffArray[:,i,1]**2
+
+        # normalise overall to avoid machine errors
+        self.CoeffArray = self.CoeffArray / np.average( self.CoeffArray,
+                                                        weights = self.CoeffArray.astype(bool))
+        
         if self.weightscolname=="":
             coeffFilename=self.MSName+"/CoeffArray.ntsol%i.npy"%(ntsol)
         else:
@@ -139,6 +155,7 @@ class CovWeights:
 
         for i in range(self.nAnt):
             pylab.scatter(np.arange(self.nt),self.CoeffArray[:,i,0])
+#        pylab.ylim((0,0.01))
         pylab.show()
         stop
         
