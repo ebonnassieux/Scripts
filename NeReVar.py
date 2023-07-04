@@ -116,7 +116,7 @@ class CovWeights:
         # normalise overall to avoid machine errors
         self.CoeffArray = self.CoeffArray /    \
                           np.average( self.CoeffArray, weights = self.CoeffArray.astype(bool))
-                if self.weightscolname=="":
+        if self.weightscolname=="":
             coeffFilename=self.MSName+"/CoeffArray.dt%is.npy"%(dt)
         else:
             coeffFilename=self.MSName+"/CoeffArray.%s.dt%is.npy"%(weightscolname,dt)
@@ -158,9 +158,9 @@ class CovWeights:
         if self.weightscolname!=None:
             self.ms.putcol(self.weightscolname,w)
         else: print("No colname given, so weights not saved in MS.")
-#        for i in range(self.nChan):
-#            pylab.scatter(np.arange(w.shape[0]),w[:,i,0],s=0.1)
-#        pylab.show()
+        for i in range(self.nChan):
+            pylab.scatter(np.arange(w.shape[0]),w[:,i,0],s=0.1)
+        pylab.show()
 
     def close(self):
         # exit files gracefully
