@@ -10,7 +10,7 @@ import math
 import argparse
 
 class CovWeights:
-    def __init__(self, MSName, ntsol=1, nfreqsol=1, SaveDataProducts=1, \
+    def __init__(self, MSName, dt=0, nfreqsol=1, SaveDataProducts=1, \
                  uvcut=[0,2000], gainfile=None, phaseonly=True,norm=False, \
                  modelcolname="MODEL_DATA", datacolname="DATA", \
                  weightscolname="IMAGING_WEIGHT"):
@@ -19,7 +19,7 @@ class CovWeights:
         else:
             self.MSName = MSName
         self.SaveDataProducts = SaveDataProducts
-        self.ntSol            = ntsol
+        self.dt               = dt
         self.nfreqsol         = nfreqsol
         self.uvcut            = uvcut
         self.gainfile         = gainfile
@@ -36,7 +36,14 @@ class CovWeights:
         # load ant indices
         self.A0               = self.ms.getcol("ANTENNA1")
         self.A1               = self.ms.getcol("ANTENNA2")
+        # create time array
         self.tarray           = self.ms.getcol("TIME")
+        self.t0               = np.min(self.tarray)
+        self.tvals            = np.sort(list(set(self.tarray)))
+        self.t0               = np.min(self.tvals)
+        # set initial time to 0; if MJD needed add self.t0 again
+        self.tarray           = self.tarray - self.t0
+        self.tvals            = self.tvals  - self.t0
         self.nbl              = np.where(self.tarray==self.tarray[0])[0].size
         self.colnames         = self.ms.colnames()
         self.modelcolname     = modelcolname
@@ -69,42 +76,10 @@ class CovWeights:
         # reshape antennas and data columns
         self.residualdata     = self.residualdata.reshape((self.nt,self.nbl,self.nChan,self.nPola))
         self.flags            = self.flags.reshape((self.nt,self.nbl,self.nChan,self.nPola))
-        # average residual data within calibration cells
-        ### TODO: the averaging should be done later; try using a filter instead of this ###
+        self.tarray           = self.tarray.reshape((self.nt,self.nbl))
         self.A0               = self.A0.reshape((self.nt,self.nbl))
         self.A1               = self.A1.reshape((self.nt,self.nbl))
         self.ant1             = np.arange(self.nAnt)
-        
-#        ant1=np.arange(nAnt)
-#        CoeffArray=np.zeros((nt,nAnt))
-#        print("Begin calculating antenna-based coefficients")
-#        for i,t_i in enumerate(times):
-#            indexmax=min(len(times)-1,i+self.ntSol)
-#            indexmin=max(0,i-self.ntSol)
-#            tmin=times[indexmin]
-#            tmax=times[indexmax]
-#            tmask=(tarray>tmin)*(tarray<tmax)
-#            for ant in ant1:
-#                # set of vis for baselines ant-ant_i
-#                set1=(A0==ant)
-#                # set of vis for baselines ant_i-ant
-#                set2=(A1==ant)
-#                resmask=tmask*(set1+set2)
-#                rarray=residualdata[resmask]
-#                CoeffArray[i,ant] = np.mean(np.abs(rarray*rarray.conj()))
-#            PrintProgress(i,nt)
-
-
-### TODO figure out if below is actually useful. Bugged at present
-#        if self.ntSol>1:
-#            tspill=nt%self.ntSol
-#            nt1=nt+self.ntSol-tspill
-#            for i in range(int(nt1/self.ntSol)):
-#                for j in range(self.nfreqsol):
-#                    print(residualdata[i*self.ntSol:(i+1)*self.ntSol,:,self.nfreqsol*j:(j+1)*nfreqsol,:].shape)
-#                    print(np.mean(residualdata[i*self.ntSol:(i+1)*self.ntSol,:,:,:],axis=0).shape)
-#                    residualdata[i*self.ntSol:(i+1)*self.ntSol,:,self.nfreqsol*j:(j+1)*nfreqsol,:]=np.mean(residualdata[i*self.ntSol:(i+1)*self.ntSol,:,:,:],axis=0)
-
         residuals             = np.zeros_like(self.residualdata,dtype=np.complex64)
         # remove crosspols
         residuals[:,:,:,0]    = self.residualdata[:,:,:,0]
@@ -114,17 +89,25 @@ class CovWeights:
         # start calculating the weights
         print("Begin calculating antenna-based coefficients")
         flagweights = (1-self.flags).astype(bool)
-        for t_i in range(self.nt):
+
+        mask = np.zeros_like(residuals).astype(bool)
+        
+        #for t_i in range(self.nt):
+        for t_i,t_val in enumerate(self.tvals):
+
+
+            tmask = ( (t_val+dt  >= self.tvals) * (t_val-dt  <= self.tvals))
+
             # build weights for each antenna at time t_i
             for ant in self.ant1:
-                # set of vis for baselines ant-ant_i
-                set1        = np.where(self.A0[t_i]==ant)[0]
-                # set of vis for baselines ant_i-ant
-                set2        = np.where(self.A1[t_i]==ant)[0]
-                # build boolean weighting array from flags
-                AntResids   = np.append(residuals[t_i,set1,:,:],residuals[t_i,set2,:,:])
-                
-                if np.sum(np.abs(AntResids))>0:
+
+                Resids = residuals[tmask]
+                # build mask for set of vis w/ ant-ant_i and ant_i-ant bls
+                antmask = (self.A0[tmask]==ant) + (self.A1[tmask]==ant)
+                AntResids   = Resids[antmask]
+                AbsResids = np.abs(AntResids)
+
+                if np.sum(AbsResids)>0:
                     AbsResids = np.abs(AntResids)
                     self.CoeffArray[t_i,ant,0] = np.average( np.real( AntResids * AntResids.conj() ), \
                                                              weights = AbsResids.astype(bool) )
@@ -147,9 +130,9 @@ class CovWeights:
                                                         weights = self.CoeffArray.astype(bool))
         
         if self.weightscolname=="":
-            coeffFilename=self.MSName+"/CoeffArray.ntsol%i.npy"%(ntsol)
+            coeffFilename=self.MSName+"/CoeffArray.dt%is.npy"%(dt)
         else:
-            coeffFilename=self.MSName+"/CoeffArray.%s.ntsol%i.npy"%(weightscolname,ntsol)
+            coeffFilename=self.MSName+"/CoeffArray.%s.dt%is.npy"%(weightscolname,dt)
         print("Save coefficient array as %s."%coeffFilename)
         np.save(coeffFilename,self.CoeffArray)
 
@@ -173,6 +156,7 @@ class CovWeights:
         antnames=ants.getcol("NAME")
         nAnt=len(antnames)
         tarray=ms.getcol("TIME")
+
         darray=ms.getcol("DATA")
         tvalues=np.array(sorted(list(set(tarray))))
         nt=tvalues.shape[0]
@@ -329,7 +313,8 @@ def readArguments():
     parser=argparse.ArgumentParser("Calculate visibility imagin weights based on calibration quality")
     parser.add_argument("-v","--verbose",        help="Be verbose, say everything program does. Default is False",required=False,action="store_true")
     parser.add_argument("--filename",  type=str, help="Name of the measurement set for which weights want to be calculated",required=True,nargs="+")
-    parser.add_argument("--ntsol",     type=int, help="Solution interval, in timesteps, for your calibration",required=True)
+    parser.add_argument("--dt",        type=int, help="Time interval, in seconds, over which to estimate the gain variances. "+\
+                        "Default of 0 means an estimate is made for every measurement.",required=False, default=0)
     parser.add_argument("--nfreqsol",  type=int, help="Frequency interval, in channels, for your calibration. Default is 8.",required=False,default=8)
     parser.add_argument("--weightcol", type=str, help="Name of the weights column name you want to save the weights to. Default is CAL_WEIGHT.",required=False,default="CAL_WEIGHT")
     parser.add_argument("--datacol",   type=str, help="Name of the data column name you want to read to build residual visibilities. Default is DATA.",required=False,default="DATA")
@@ -349,7 +334,7 @@ if __name__=="__main__":
     start_time     = time.time()
     args           = readArguments()
     mslist         = args["filename"]
-    ntsol          = args["ntsol"]
+    dt             = args["dt"]
     nfreqsol       = args["nfreqsol"]
     weightscolname = args["weightcol"]
     modelcolname   = args["modelcol"]
@@ -360,7 +345,7 @@ if __name__=="__main__":
     normalise      = args["normalise"]
     for msname in mslist:
         print("Finding time-covariance weights for: %s"%msname)
-        covweights=CovWeights(MSName=msname,ntsol=ntsol,nfreqsol=nfreqsol, gainfile=gainfile,uvcut=uvcut,phaseonly=phaseonly, \
+        covweights=CovWeights(MSName=msname,dt=dt,nfreqsol=nfreqsol, gainfile=gainfile,uvcut=uvcut,phaseonly=phaseonly, \
                               norm=normalise, modelcolname=modelcolname, datacolname=datacolname, weightscolname=weightscolname)
         coefficients=covweights.FindWeights()
         covweights.SaveWeights(coefficients,colname=weightscolname,AverageOverChannels=True)
