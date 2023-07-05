@@ -1,0 +1,66 @@
+def readGainFile(gainfile,ms,nt,nchan,nbl,tarray,nAnt,msname,phaseonly):
+    if phaseonly==True or gainfile=="":
+        print("Assume amplitude gain values of 1 everywhere")
+        ant1gainarray1=np.ones((nt*nbl,nchan))
+        ant2gainarray1=np.ones((nt*nbl,nchan))
+    else:
+        if gainfile[-4:]==".npz":
+            print("Assume reading a kMS sols file")
+            gainsnpz=np.load(gainfile)
+            gains=gainsnpz["Sols"]
+            ant1gainarray=np.ones((nt*nbl,nchan))
+            ant2gainarray=np.ones((nt*nbl,nchan))
+            A0arr=ms.getcol("ANTENNA1")
+            A1arr=ms.getcol("ANTENNA2")
+            print("Build squared gain array")
+            for i in range(len(gains)):
+                timemask=(tarray>gains[i][0])*(tarray<gains[i][1])
+                for j in range(nAnt):
+                    mask1=timemask*(A0arr==j)
+                    mask2=timemask*(A1arr==j)
+                    for k in range(nchan):
+                        ant1gainarray[mask1,:]=np.abs(np.nanmean(gains[i][2][0,j,0]))#np.abs(np.nanmean(gains[i][3][0,j]))                                                             
+                        ant2gainarray[mask2,:]=np.abs(np.nanmean(gains[i][2][0,j,0]))#np.abs(np.nanmean(gains[i][3][0,j]))                                                             
+                PrintProgress(i,len(gains))
+            np.save(msname+"/ant1gainarray",ant1gainarray)
+            np.save(msname+"/ant2gainarray",ant2gainarray)
+            ant1gainarray=np.load(msname+"/ant1gainarray.npy")
+            ant2gainarray=np.load(msname+"/ant2gainarray.npy")
+            #        ant1gainarray1=np.ones((nt,nbl,nchan))                                                                                                                            
+            #        ant2gainarray1=np.ones((nt,nbl,nchan))                                                                                                                            
+            #        for i in range(nchan):                                                                                                                                            
+            #            ant1gainarray1[:,:,i]=ant1gainarray**2                                                                                                                        
+            #            ant2gainarray1[:,:,i]=ant2gainarray**2                                                                                                                        
+            ant1gainarray1=ant1gainarray**2#1.reshape((nt*nbl,nchan))                                                                                                                  
+            ant2gainarray1=ant2gainarray**2#1.reshape((nt*nbl,nchan))
+	                if gainfile[-3:]==".h5":
+                print("Assume reading losoto h5parm file")
+                import losoto
+                solsetName="sol000"
+                soltabName="amp000"
+                try:
+                    gfile=losoto.h5parm.openSoltab(gainfile,solsetName=solsetName,soltabName=soltabName)
+                except:
+                    print("Could not find amplitude gains in h5parm. Assuming gains of 1 everywhere.")
+                    ant1gainarray1=np.ones((nt*nbl,nchan))
+                    ant2gainarray1=np.ones((nt*nbl,nchan))
+                    return ant1gainarray1,ant2gainarray1
+                freqs=table(msname+"/SPECTRAL_WINDOW").getcol("CHAN_FREQ")
+                gains=gfile.getValues()[0] # axes: pol, dir, ant, freq, times                                                                                                          
+                gfreqs=gfile.getValues()[1]["freq"]
+                times=fgile.getValues()[1]["time"]
+                ant1gainarray=np.zeros((nt*nbl,nchan))
+                ant2gainarray=np.zeros((nt*nbl,nchan))
+                for j in range(nAnt):
+                    mask1=timemask*(A0arr==j)
+                    mask2=timemask*(A1arr==j)
+                    for k in range(nchan):
+                        if freqs[k] in gfreqs:
+                            freqmask=(gfreqs==k)
+                            ant1gainarray1[mask1,k]=np.mean(gains[:,0,j,freqmask],axis=0)**2
+                            ant2gainarray1[mask2,k]=np.mean(gains[:,0,j,freqmask],axis=0)**2
+            else:
+                print("Gain file type not currently supported. Assume all gain amplitudes are 1.")
+                ant1gainarray1=np.ones((nt*nbl,nchan))
+                ant2gainarray1=np.ones((nt*nbl,nchan))
+    return ant1gainarray1,ant2gainarray1
