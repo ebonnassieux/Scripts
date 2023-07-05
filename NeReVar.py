@@ -8,8 +8,28 @@ import time
 import argparse
 from astropy.time import Time
 
+import matplotlib
+import matplotlib.pyplot as plt
+from matplotlib import gridspec
+import matplotlib.patheffects as pe
+
 
 class CovWeights:
+    """
+    A class used to generate interferometric quality-based weighting scheme values.
+    Standard use is to instantiate the class, then FindWeights, SaveWeights, close,
+    and CreateDiagnostics.
+
+    Attributes:
+    --------------
+    MSName : str
+       a string containing the path to the Measurement Set for which to 
+       generate weighting scheme
+    dt     : float
+       the timescale [min] over which the gain variances should be calculated
+
+
+    """
     ### initialise the instance.
     def __init__(self, MSName, dt=0, nt=0, dfreq=0, nfreq=0, SaveDataProducts=True, \
                  uvcut=[0,2000], gainfile=None, phaseonly=True,norm=False, \
@@ -242,7 +262,58 @@ class CovWeights:
         pylab.xlabel(r"$uv$-distance [km]")
         pylab.ylabel(r"Weight value")
         pylab.savefig(self.DiagDir+"WeightsUVWave")
+
+        nAnts = len(self.CoeffDict['Antennas'])
+        nColumns = int(np.floor(np.sqrt(nAnts)))
+        nRows = int(np.ceil(nAnts/nColumns))
         
+        t_max = (np.max(self.CoeffDict['Times'])-np.min(self.CoeffDict['Times']))/3600
+        chan_max = len(self.CoeffDict['Freqs'])
+        
+        #Start plot
+        fig = plt.figure(figsize=(15, 10))
+        gs = gridspec.GridSpec(nRows, nColumns)
+        gs.update(wspace=0, hspace=0, right=0.945, left=0.03, top=0.99, bottom=0.025)
+        
+        for idx_y in range(nRows):
+            for idx_x in range(nColumns):
+                ant_idx = nColumns*idx_y + idx_x                
+                ax = fig.add_subplot(gs[idx_y,idx_x])
+                
+                ax.set_xlim((0, t_max))
+                ax.set_ylim((0, chan_max))
+                
+                if idx_x > 0:
+                    ax.yaxis.set_ticklabels([])
+                else:
+                    ticklabels=ax.yaxis.get_ticklabels()
+                    if ticklabels[-1]._y > 0.9*chan_max and idx_y != 0:
+                        ax.yaxis.set_ticklabels(ticklabels[:-1])
+                if idx_y < nRows-1:
+                    ax.xaxis.set_ticklabels([])
+                else:
+                    ticklabels=ax.xaxis.get_ticklabels()
+                    if ticklabels[-1]._x > 0.9*t_max and idx_x != nColumns-1:
+                        ax.xaxis.set_ticklabels(ticklabels[:-1])
+                ax.tick_params(axis='y',which='major',direction='in',left='on',right='on')
+                ax.tick_params(axis='x',which='major',direction='in',bottom='on',top='on')
+
+                
+                #Check if we're not overshooting
+                if ant_idx >= nAnts:
+                    break
+                
+                ant_name = self.CoeffDict['Antennas'][ant_idx]
+                
+                coeffs = self.CoeffDict['CoeffArr'][ant_name].T
+                coeffs[coeffs==0] = np.nan
+                im = ax.imshow(coeffs, origin='lower', aspect='auto', interpolation='none', extent=(0, t_max, 0, chan_max), vmin=0.24, vmax=2.30)
+                ax.set_title(ant_name, c='w', fontsize=8, y=1.0, pad=-14, path_effects=[pe.withStroke(linewidth=1, foreground="black")])
+
+        cbar_ax = fig.add_axes([0.95, 0.025, 0.02, 0.965])
+        fig.colorbar(im, cax=cbar_ax, aspect=40, extend='both', pad=0.02, fraction=0.047)
+        plt.savefig(self.DiagDir+"coeffs.png", dpi=300)
+
         
 ### auxiliary functions ###
 ### printer for when needed
@@ -257,26 +328,26 @@ def PrintProgress(currentIter,maxIter,msg=""):
 ### parser
 def readArguments():
     parser=argparse.ArgumentParser("Calculate visibility imagin weights based on calibration quality")
-    parser.add_argument("-v","--verbose",        help="Be verbose, say everything program does. Default is False",required=False,action="store_true")
-    parser.add_argument("--filename",  type=str, help="Name of the measurement set for which weights want to be calculated",required=True,nargs="+")
-    parser.add_argument("--dt",        type=int, help="Time interval, in minutes, for variance estimation. "+\
+    parser.add_argument("-v","--verbose",          help="Be verbose, say everything program does. Default is False",required=False,action="store_true")
+    parser.add_argument("--filename",  type=str,   help="Name of the measurement set for which weights want to be calculated",required=True,nargs="+")
+    parser.add_argument("--dt",        type=float, help="Time interval, in minutes, for variance estimation. "+\
                         "Default of 0 means an estimate is made for every measurement.",required=False, default=0)
-    parser.add_argument("--nt",        type=int, help="Time interval, in timesteps, for variance estimation. "+\
+    parser.add_argument("--nt",        type=int,   help="Time interval, in timesteps, for variance estimation. "+\
                         "Default of 0 means an estimate is made for every measurement. If both dt and nt provided, nt prevails.",required=False, default=0)
-    parser.add_argument("--dnu",     type=int, help="Frequency interval, in MHz, for variance estimation. Default of 0, "+\
+    parser.add_argument("--dnu",       type=float, help="Frequency interval, in MHz, for variance estimation. Default of 0, "+\
                         "which solves across all frequency in the dataset.",required=False,default=0)
-    parser.add_argument("--nfreq",     type=int, help="Frequency interval, in channels, for variance estimation. Default of 0, "+\
+    parser.add_argument("--nfreq",     type=int,   help="Frequency interval, in channels, for variance estimation. Default of 0, "+\
                         "which solves across all frequency in the dataset.",required=False,default=0)
-    parser.add_argument("--weightcol", type=str, help="Name of the weights column name you want to save the weights to. "+\
+    parser.add_argument("--weightcol", type=str,   help="Name of the weights column name you want to save the weights to. "+\
                         "Default is QUAL_WEIGHT.",required=False,default="QUAL_WEIGHT")
-    parser.add_argument("--datacol",   type=str, help="Name of the data column name you want to read to build residual visibilities. "+\
+    parser.add_argument("--datacol",   type=str,   help="Name of the data column name you want to read to build residual visibilities. "+\
                         "Default is DATA.",required=False,default="DATA")
-    parser.add_argument("--modelcol",  type=str, help="Name of the weights column name you want to save the weights to. "+\
+    parser.add_argument("--modelcol",  type=str,   help="Name of the weights column name you want to save the weights to. "+\
                         "Default is MODEL_DATA_CORR.",required=False,default="MODEL_DATA_CORR")
-    parser.add_argument("--gainfile",  type=str, help="Name of the gain file you want to read to rebuild the calibration quality weights."+\
+    parser.add_argument("--gainfile",  type=str,   help="Name of the gain file you want to read to rebuild the calibration quality weights."+\
                         " If no file is given, equivalent to rebuilding weights for phase-only calibration.",required=False,default="")
-    parser.add_argument("--uvcutkm",   type=float,nargs=2,default=[0,3000],required=False,help="uvcut used during calibration, in km.")
-    parser.add_argument("--phaseonly",           help="Use if calibration was phase-only; "+\
+    parser.add_argument("--uvcutkm",   type=float, nargs=2,default=[0,3000],required=False,help="uvcut used during calibration, in km.")
+    parser.add_argument("--phaseonly",             help="Use if calibration was phase-only; "+\
                         "this means that gain information doesn't need to be read.",required=False,action="store_true")
     parser.add_argument("--diagnostics",type=str, default="NeReVar_Diagnostics",required=False,\
                         help="Full path and name of folder in which to save diagnostic plots. By default, will save in MS/NeReVar_Diagnostics")
