@@ -61,14 +61,65 @@ class CovWeights:
        created if not already there. Default IMAGING_WEIGHT.
     verbose          : bool
        flag to print out stdout information. Default: True
-    diagdir          : Name of the directory 
-
+    diagdir          : str
+       Name of the directory in which to place data products and 
+       diagnostic plots. Will be created if not existing. Default is NeReVar.
     """
+
     ### initialise the instance.
     def __init__(self, MSName, dt=0, nt=0, dfreq=0, nchan=0, SaveDataProducts=True, \
                  uvcut=[0,2000], gainfile=None, phaseonly=True,antnorm=False, \
                  modelcolname="MODEL_DATA", datacolname="DATA", \
                  weightscolname="IMAGING_WEIGHT", verbose=True,diagdir="NeReVar"):
+        """
+        A class used to generate interferometric quality-based weighting scheme values.
+        Standard use is to instantiate the class, then FindWeights, SaveWeights, close,
+        and CreateDiagnostics.
+
+        Attributes:
+        --------------
+        MSName           : str
+            a string containing the path to the Measurement Set for which to
+            generate weighting scheme
+        dt               : float
+            timescale [min] over which the gain variances should be calculated. Default 0
+        nt               : int
+            number of timesteps over which gain variances should be calculated. Used
+            as alternative to dt. Default 0
+        dfreq            : float
+            bandwidth [Mhz] over which the gain variances should be calculated. Default 0
+        nchan            : int
+            number of channels over which gain variances should be calculated. Used
+            as alternative to dfreq. Default 0
+        SaveDataProducts : bool
+            flag to save data products and diagnostics in designated directory, in
+            addition to the MS weights column. Default True
+        uvcut            : [float, float]
+            values [km] for inner and outer uvcuts to apply while calculating the gain
+            variance values. default [0,20000]
+        gainfile         : str
+            functionality not yet implemented. Do not use.
+        phaseonly        : bool
+            flag to avoid using residual amplitude values directly. Can only be set to
+            False if amplitude gains are provided through a gainfile. Default True
+        antnorm          : bool
+            flag to normalise antenna coefficient array per antenna rather than globally.
+            functionality not yet implemented. Default False.
+        modelcolname     : str
+            name of the gain-corrupted model data column to be read in order to generate
+            the residuals. Default MODEL_DATA.
+        datacolname      : str
+            name of the raw data column from which to subtract modelcolname visibilities.
+            Default DATA.
+        weightscolname   : str
+            name of the MS column in which to save the weighting scheme generated. Will be
+            created if not already there. Default IMAGING_WEIGHT.
+        verbose          : bool
+            flag to print out stdout information. Default: True
+        diagdir          : str
+            Name of the directory in which to place data products and
+            diagnostic plots. Will be created if not existing. Default is NeReVar.
+        """
         # define verbosity
         self.verbose          = verbose
         if MSName[-1]=="/":
@@ -88,7 +139,7 @@ class CovWeights:
         self.uvcut            = uvcut
         self.gainfile         = gainfile
         self.phaseonly        = phaseonly
-        self.normalise        = norm
+        self.antnorm          = antnorm
         self.ms               = table(self.MSName,readonly=False,ack=self.verbose)
         # open antennas
         self.ants             = table(self.ms.getkeyword("ANTENNA"),ack=self.verbose)
@@ -180,6 +231,12 @@ class CovWeights:
 
     ### calculate the weights
     def FindWeights(self):
+        """
+        Function to calculate the antenna-based variance estimates
+        used as the baseline for NeReVar's quality-based weighting
+        scheme. This creates self.CoeffArray and writes it to the
+        diagnostic directory if the latter is requested.
+        """
         if self.verbose:
             print("Begin calculating antenna-based coefficients")
         mask   = np.zeros_like(self.residuals).astype(bool)
@@ -209,20 +266,27 @@ class CovWeights:
         for i in range(self.nAnt):
             # flag any potential NaNs
             self.CoeffArray[np.isnan(self.CoeffArray)]=np.inf
-            # normalise per antenna if requested
-            ### TODO: debug the below as axes have changed
-#            if self.normalise==True:
-#                self.CoeffArray[:,i,0]=self.CoeffArray[:,i,0]/self.CoeffArray[:,i,1]**2
-        # normalise overall to avoid machine errors
-        self.CoeffArray = self.CoeffArray /    \
-                          np.average( self.CoeffArray, weights = self.CoeffArray.astype(bool))
-        if self.weightscolname=="":
-            coeffFilename=self.MSName+"/CoeffArray.dt%is.npy"%(dt)
-        else:
-            coeffFilename=self.MSName+"/CoeffArray.%s.dt%is.npy"%(weightscolname,dt)
-        if self.verbose:
-            print("Save coefficient array as %s."%coeffFilename)
-        np.save(coeffFilename,self.CoeffArray)
+            # if requested, flag per antenna
+            if self.antnorm:
+                for i in range(self.nAnt):
+                    print(self.CoeffArray.shape)
+                    antcoeffs = self.CoeffArray[i,:,:]
+                    # check that the full antenna is not flagged
+                    if np.sum(antcoeffs)!=0:
+                        self.CoeffArray[i,:,:] = np.average(antcoeffs, weights=antcoeffs.astype(bool))
+                        
+            else:
+                self.CoeffArray = self.CoeffArray /    \
+                    np.average( self.CoeffArray, weights = self.CoeffArray.astype(bool))
+            
+            # create diagnostic directory if not yet created
+            if self.SaveDataProducts:
+                if not os.path.exists(self.DiagDir):
+                    os.makedirs(self.DiagDir)
+                coeffFilename = self.DiagDir+"CoeffArray.npy"
+                if self.verbose:
+                    print("Save coefficient array as %s."%coeffFilename)
+                np.save(coeffFilename,self.CoeffArray)
 
     ### save the weights in the designated measurement set column
     def SaveWeights(self):
@@ -269,6 +333,10 @@ class CovWeights:
 
     ### exit gracefully
     def close(self):
+        """
+        Function to close open read-write files. Should be called after
+        SaveWeights is run, and will not affect CreateDiagnosticPlots.
+        """
         self.ants.close()
         self.ms.close()
 
@@ -367,7 +435,8 @@ def readArguments():
     parser.add_argument("--dt",        type=float, help="Time interval, in minutes, for variance estimation. "+\
                         "Default of 0 means an estimate is made for every measurement.",required=False, default=0)
     parser.add_argument("--nt",        type=int,   help="Time interval, in timesteps, for variance estimation. "+\
-                        "Default of 0 means an estimate is made for every measurement. If both dt and nt provided, nt prevails.",required=False, default=0)
+                        "Default of 0 means an estimate is made for every measurement. If both dt and nt provided, nt prevails."\
+                        ,required=False, default=0)
     parser.add_argument("--dnu",       type=float, help="Frequency interval, in MHz, for variance estimation. Default of 0, "+\
                         "which solves across all frequency in the dataset.",required=False,default=0)
     parser.add_argument("--nchan",     type=int,   help="Frequency interval, in channels, for variance estimation. Default of 0, "+\
@@ -385,7 +454,8 @@ def readArguments():
                         "this means that gain information doesn't need to be read.",required=False,action="store_true")
     parser.add_argument("--diagnostics",type=str, default="NeReVar_Diagnostics",required=False,\
                         help="Full path and name of folder in which to save diagnostic plots. By default, will save in MS/NeReVar_Diagnostics")
-#    parser.add_argument("--normalise",           help="Normalise gains to avoid suppressing long baselines",required=False,action="store_true")
+    parser.add_argument("--NormPerAnt",            help="Normalise gains per antenna to avoid suppressing long baselines", \
+                        required=False,action="store_true")
     args=parser.parse_args()
     return vars(args)
 
@@ -408,14 +478,14 @@ if __name__=="__main__":
     gainfile       = args["gainfile"]
     uvcut          = args["uvcutkm"]*1000
     phaseonly      = args["phaseonly"]
-    #normalise      = args["normalise"]
+    NormPerAnt     = args["NormPerAnt"]
     diagdir        = args["diagnostics"]
     # calculate weights for each measurement set
     for msname in mslist:
         if verb:
             print("Finding time-covariance weights for: %s"%msname)
         covweights=CovWeights(MSName=msname,dt=dt,nt=nt, nchan=nchan, dfreq=dfreq, gainfile=gainfile,uvcut=uvcut,phaseonly=phaseonly, \
-                              antnorm=False, modelcolname=modelcolname, datacolname=datacolname, weightscolname=weightscolname,verbose=verb, \
+                              antnorm=NormPerAnt, modelcolname=modelcolname, datacolname=datacolname, weightscolname=weightscolname,verbose=verb, \
                               diagdir=diagdir)
         coefficients=covweights.FindWeights()
         covweights.SaveWeights()
