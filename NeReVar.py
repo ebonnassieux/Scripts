@@ -10,16 +10,25 @@ from astropy.time import Time
 
 
 class CovWeights:
-    def __init__(self, MSName, dt=0, nt=0, dfreq=0, nfreq=0, SaveDataProducts=1, \
+    def __init__(self, MSName, dt=0, nt=0, dfreq=0, nfreq=0, SaveDataProducts=True, \
                  uvcut=[0,2000], gainfile=None, phaseonly=True,norm=False, \
                  modelcolname="MODEL_DATA", datacolname="DATA", \
-                 weightscolname="IMAGING_WEIGHT", verbose=True):
+                 weightscolname="IMAGING_WEIGHT", verbose=True,diagdir="NeReVar"):
+        # define verbosity
         self.verbose          = verbose
         if MSName[-1]=="/":
-            self.MSName = MSName[0:-1]
+            self.MSName       = MSName[0:-1]
         else:
-            self.MSName = MSName
+            self.MSName       = MSName
         self.SaveDataProducts = SaveDataProducts
+        if self.SaveDataProducts:
+            # define directory in which to save stuff + diagnostics
+            if diagdir[0]=="/":
+                self.DiagDir  = diagdir
+            else:
+                self.DiagDir  = self.MSName+"/"+diagdir
+            if self.DiagDir[-1]!="/":
+                self.DiagDir=self.DiagDir+"/"
         self.dfreq            = int(dfreq / 2)
         self.uvcut            = uvcut
         self.gainfile         = gainfile
@@ -100,9 +109,7 @@ class CovWeights:
         self.flags[self.uvlen<self.uvcut[0]]=1
         # apply flags to data
         self.residualdata[self.flags==1]=0
-
-    def FindWeights(self):
-        # reshape antennas and data columns
+        # reshape antennas and data columns for convenience [LOFAR only]
         self.residualdata     = self.residualdata.reshape((self.nt,self.nbl,self.nChan,self.nPola))
         self.flags            = self.flags.reshape((self.nt,self.nbl,self.nChan,self.nPola))
         self.tarray           = self.tarray.reshape((self.nt,self.nbl))
@@ -113,8 +120,11 @@ class CovWeights:
         # remove crosspols
         residuals[:,:,:,0]    = self.residualdata[:,:,:,0]
         residuals[:,:,:,1]    = self.residualdata[:,:,:,3]
-        # antenna coefficient array
+        # build antenna coefficient array
         self.CoeffArray       = np.zeros((self.nAnt, self.nt, self.nChan))
+
+
+    def FindWeights(self):
         # start calculating the weights
         if self.verbose:
             print("Begin calculating antenna-based coefficients")
@@ -200,9 +210,6 @@ class CovWeights:
         else:
             if self.verbose:
                 print("No colname given, so weights not saved in MS.")
-#        for i in range(self.nChan):
-#            pylab.scatter(np.arange(w.shape[0]),w[:,i,0],s=0.1)
-#        pylab.show()
         self.weights = w
 
     def close(self):
@@ -211,6 +218,9 @@ class CovWeights:
         self.ms.close()
                           
     def CreateDiagnosticPlots(self):
+        # create the output direectory
+        os.makedirs(self.DiagDir)
+        # create the coefficient directory
         self.CoeffDict = {"Times"    : self.tvals,
                           "ObsStart" : Time(self.t0/3600./24,format="mjd").iso,
                           "ObsEnd"   : Time((self.t0+np.max(self.tvals))/3600./24,format="mjd").iso,
@@ -220,20 +230,15 @@ class CovWeights:
                           }
         for idx, ant in enumerate(self.antnames):
             self.CoeffDict["CoeffArr"][ant] = self.CoeffArray[idx, : :]
-        print(self.CoeffDict["ObsStart"],self.CoeffDict["ObsEnd"])
-
-        
-        flags    = 1 - self.flags.reshape((self.nbl*self.nt,self.nChan,self.nPola))
-        uvflags  = 1 - np.sum(flags,axis=(1,2))
-
-        print(uvflags)
-        
+        # apply flags for the diagnostics
+        flags    = (self.flags.reshape((self.nbl*self.nt,self.nChan,self.nPola)).astype(bool) == False)
+        uvflags  = (np.sum(flags,axis=(1,2)).astype(bool))
         uvdist   = np.sqrt(self.u[uvflags]**2 + self.v[uvflags]**2)/1000.
-
         for i in range(self.nChan):
-            pylab.scatter(uvdist,self.weights[uvflags,i,0])
-        pylab.show()
-        stp
+            pylab.scatter(uvdist,self.weights[uvflags,i,0],s=0.1)
+        pylab.xlabel(r"$uv$-distance [km]")
+        pylab.ylabel(r"Weight value")
+        pylab.savefig(self.DiagDir+"WeightsUVWave")
         
         
 ### auxiliary functions ###
@@ -268,6 +273,8 @@ def readArguments():
     parser.add_argument("--uvcutkm",   type=float,nargs=2,default=[0,3000],required=False,help="uvcut used during calibration, in km.")
     parser.add_argument("--phaseonly",           help="Use if calibration was phase-only; "+\
                         "this means that gain information doesn't need to be read.",required=False,action="store_true")
+    parser.add_argument("--diagnostics",type=str, default="NeReVar_Diagnostics",required=False,\
+                        help="Full path and name of folder in which to save diagnostic plots. By default, will save in MS/NeReVar_Diagnostics")
 #    parser.add_argument("--normalise",           help="Normalise gains to avoid suppressing long baselines",required=False,action="store_true")
     args=parser.parse_args()
     return vars(args)
@@ -290,12 +297,14 @@ if __name__=="__main__":
     gainfile       = args["gainfile"]
     uvcut          = args["uvcutkm"]*1000
     phaseonly      = args["phaseonly"]
-#    normalise      = args["normalise"]
+    #normalise      = args["normalise"]
+    diagdir        = args["diagnostics"]
     for msname in mslist:
         if verb:
             print("Finding time-covariance weights for: %s"%msname)
         covweights=CovWeights(MSName=msname,dt=dt,nt=nt, nfreq=nfreq, dfreq=dfreq, gainfile=gainfile,uvcut=uvcut,phaseonly=phaseonly, \
-                              norm=False, modelcolname=modelcolname, datacolname=datacolname, weightscolname=weightscolname,verbose=verb)
+                              norm=False, modelcolname=modelcolname, datacolname=datacolname, weightscolname=weightscolname,verbose=verb, \
+                              diagdir=diagdir)
         coefficients=covweights.FindWeights()
         covweights.SaveWeights()
         covweights.CreateDiagnosticPlots()
