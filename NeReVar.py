@@ -221,7 +221,8 @@ class CovWeights:
     ### create diagnostic plots if requested
     def CreateDiagnosticPlots(self):
         # create the output directory
-        os.makedirs(self.DiagDir)
+        if not os.path.exists(self.DiagDir):
+            os.makedirs(self.DiagDir)
         # create the coefficient directory
         self.CoeffDict = {"Times"    : self.tvals,
                           "ObsStart" : Time(self.t0/3600./24,format="mjd").iso,
