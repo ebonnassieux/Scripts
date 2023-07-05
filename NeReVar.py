@@ -22,17 +22,51 @@ class CovWeights:
 
     Attributes:
     --------------
-    MSName : str
+    MSName           : str
        a string containing the path to the Measurement Set for which to 
        generate weighting scheme
-    dt     : float
-       the timescale [min] over which the gain variances should be calculated
-
+    dt               : float
+       timescale [min] over which the gain variances should be calculated. Default 0
+    nt               : int
+       number of timesteps over which gain variances should be calculated. Used
+       as alternative to dt. Default 0
+    dfreq            : float
+       bandwidth [Mhz] over which the gain variances should be calculated. Default 0
+    nchan            : int
+       number of channels over which gain variances should be calculated. Used
+       as alternative to dfreq. Default 0
+    SaveDataProducts : bool
+       flag to save data products and diagnostics in designated directory, in
+       addition to the MS weights column. Default True
+    uvcut            : array of floats
+       values [km] for inner and outer uvcuts to apply while calculating the gain
+       variance values. default [0,20000]
+    gainfile         : str
+       not used yet. Will eventually allow for specific gain file to be read to
+       extract relevant quantities. Default None
+    phaseonly        : bool
+       flag to avoid using residual amplitude values directly. Can only be set to
+       False if amplitude gains are provided through a gainfile. Default True
+    antnorm          : bool
+       flag to normalise antenna coefficient array per antenna rather than globally.
+       functionality not yet implemented. Default False.
+    modelcolname     : str
+       name of the gain-corrupted model data column to be read in order to generate
+       the residuals. Default MODEL_DATA.
+    datacolname      : str
+       name of the raw data column from which to subtract modelcolname visibilities.
+       Default DATA.
+    weightscolname   : str
+       name of the MS column in which to save the weighting scheme generated. Will be
+       created if not already there. Default IMAGING_WEIGHT.
+    verbose          : bool
+       flag to print out stdout information. Default: True
+    diagdir          : Name of the directory 
 
     """
     ### initialise the instance.
-    def __init__(self, MSName, dt=0, nt=0, dfreq=0, nfreq=0, SaveDataProducts=True, \
-                 uvcut=[0,2000], gainfile=None, phaseonly=True,norm=False, \
+    def __init__(self, MSName, dt=0, nt=0, dfreq=0, nchan=0, SaveDataProducts=True, \
+                 uvcut=[0,2000], gainfile=None, phaseonly=True,antnorm=False, \
                  modelcolname="MODEL_DATA", datacolname="DATA", \
                  weightscolname="IMAGING_WEIGHT", verbose=True,diagdir="NeReVar"):
         # define verbosity
@@ -90,19 +124,19 @@ class CovWeights:
         self.chanfreqs        = self.freqs.getcol("CHAN_FREQ")
         self.chanwidth        = np.mean(self.freqs.getcol("CHAN_WIDTH"))
         # create freq intervals
-        if nfreq !=0:
+        if nchan !=0:
             if self.verbose:
-                print("dnu and nfreq are incompatible; nfreq is retained.")
-            self.nfreq        = nfreq
-            self.dfreq        = nfreq * self.chanwidth
+                print("dnu and nchan are incompatible; nchan is retained.")
+            self.nchan        = nchan
+            self.dfreq        = nchan * self.chanwidth
         else:
-            self.nfreq        = dfreq / self.chanwidth
+            self.nchan        = dfreq / self.chanwidth
             self.dfreq        = dfreq
         # since we are looking forward and backward, divide intervals by 2
         self.dt               =     self.dt     / 2.
         self.nt               = int(int(self.nt   ) / 2. + (self.nt    % 2 > 0))
         self.dfreq            =     self.dfreq  / 2.
-        self.nfreq            = int(int(self.nfreq) / 2. + (self.nfreq % 2 > 0))
+        self.nchan            = int(int(self.nchan) / 2. + (self.nchan % 2 > 0))
         self.nbl              = np.where(self.tarray==self.tarray[0])[0].size
         self.colnames         = self.ms.colnames()
         self.modelcolname     = modelcolname
@@ -161,9 +195,9 @@ class CovWeights:
                 AbsResids  = np.abs(AntResids)
                 # before averaging operation, check if the data is not flagged to save time
                 for chan_i in range(self.nChan):
-                    chanmin    = max(0,chan_i-self.nfreq)
-                    vals       = AntResids[:,chanmin:(chan_i+self.nfreq),:]
-                    weights    = AbsResids[:,chanmin:(chan_i+self.nfreq),:]                    
+                    chanmin    = max(0,chan_i-self.nchan)
+                    vals       = AntResids[:,chanmin:(chan_i+self.nchan),:]
+                    weights    = AbsResids[:,chanmin:(chan_i+self.nchan),:]                    
                     if np.sum(weights) > 0:
                         self.CoeffArray[ant, t_i, chan_i] = np.average( np.real( vals * vals.conj() ), \
                                                                         weights = weights.astype(bool) )
@@ -336,7 +370,7 @@ def readArguments():
                         "Default of 0 means an estimate is made for every measurement. If both dt and nt provided, nt prevails.",required=False, default=0)
     parser.add_argument("--dnu",       type=float, help="Frequency interval, in MHz, for variance estimation. Default of 0, "+\
                         "which solves across all frequency in the dataset.",required=False,default=0)
-    parser.add_argument("--nfreq",     type=int,   help="Frequency interval, in channels, for variance estimation. Default of 0, "+\
+    parser.add_argument("--nchan",     type=int,   help="Frequency interval, in channels, for variance estimation. Default of 0, "+\
                         "which solves across all frequency in the dataset.",required=False,default=0)
     parser.add_argument("--weightcol", type=str,   help="Name of the weights column name you want to save the weights to. "+\
                         "Default is QUAL_WEIGHT.",required=False,default="QUAL_WEIGHT")
@@ -366,7 +400,7 @@ if __name__=="__main__":
     mslist         = args["filename"]
     dt             = args["dt"]*60.
     nt             = args["nt"]
-    nfreq          = args["nfreq"]
+    nchan          = args["nchan"]
     dfreq          = args["dnu"]*1.e6
     weightscolname = args["weightcol"]
     modelcolname   = args["modelcol"]
@@ -380,8 +414,8 @@ if __name__=="__main__":
     for msname in mslist:
         if verb:
             print("Finding time-covariance weights for: %s"%msname)
-        covweights=CovWeights(MSName=msname,dt=dt,nt=nt, nfreq=nfreq, dfreq=dfreq, gainfile=gainfile,uvcut=uvcut,phaseonly=phaseonly, \
-                              norm=False, modelcolname=modelcolname, datacolname=datacolname, weightscolname=weightscolname,verbose=verb, \
+        covweights=CovWeights(MSName=msname,dt=dt,nt=nt, nchan=nchan, dfreq=dfreq, gainfile=gainfile,uvcut=uvcut,phaseonly=phaseonly, \
+                              antnorm=False, modelcolname=modelcolname, datacolname=datacolname, weightscolname=weightscolname,verbose=verb, \
                               diagdir=diagdir)
         coefficients=covweights.FindWeights()
         covweights.SaveWeights()
