@@ -161,11 +161,15 @@ class CovWeights:
         for i in range(self.nChan):
             pylab.scatter(np.arange(w.shape[0]),w[:,i,0],s=0.1)
         pylab.show()
+        self.weights = w
 
     def close(self):
         # exit files gracefully
         self.ants.close()
         self.ms.close()
+
+    def CreateDiagnosticPlots(self):
+        print("turtles")
 
 
 def readGainFile(gainfile,ms,nt,nchan,nbl,tarray,nAnt,msname,phaseonly):
@@ -272,7 +276,7 @@ def readArguments():
     parser.add_argument("--uvcutkm",   type=float,nargs=2,default=[0,3000],required=False,help="uvcut used during calibration, in km.")
     parser.add_argument("--phaseonly",           help="Use if calibration was phase-only; "+\
                         "this means that gain information doesn't need to be read.",required=False,action="store_true")
-    parser.add_argument("--normalise",           help="Normalise gains to avoid suppressing long baselines",required=False,action="store_true")
+#    parser.add_argument("--normalise",           help="Normalise gains to avoid suppressing long baselines",required=False,action="store_true")
     args=parser.parse_args()
     return vars(args)
 
@@ -291,12 +295,13 @@ if __name__=="__main__":
     gainfile       = args["gainfile"]
     uvcut          = args["uvcutkm"]
     phaseonly      = args["phaseonly"]
-    normalise      = args["normalise"]
+#    normalise      = args["normalise"]
     for msname in mslist:
         print("Finding time-covariance weights for: %s"%msname)
         covweights=CovWeights(MSName=msname,dt=dt,dfreq=dfreq, gainfile=gainfile,uvcut=uvcut,phaseonly=phaseonly, \
-                              norm=normalise, modelcolname=modelcolname, datacolname=datacolname, weightscolname=weightscolname)
+                              norm=False, modelcolname=modelcolname, datacolname=datacolname, weightscolname=weightscolname)
         coefficients=covweights.FindWeights()
         covweights.SaveWeights()
+        covweights.CreateDiagnosticPlots()
         covweights.close()
         print("Total runtime: %f min"%((time.time()-start_time)/60.))
