@@ -10,6 +10,7 @@ from astropy.time import Time
 
 
 class CovWeights:
+    ### initialise the instance.
     def __init__(self, MSName, dt=0, nt=0, dfreq=0, nfreq=0, SaveDataProducts=True, \
                  uvcut=[0,2000], gainfile=None, phaseonly=True,norm=False, \
                  modelcolname="MODEL_DATA", datacolname="DATA", \
@@ -72,11 +73,11 @@ class CovWeights:
         if nfreq !=0:
             if self.verbose:
                 print("dnu and nfreq are incompatible; nfreq is retained.")
-            self.nfreq    = nfreq
-            self.dfreq    = nfreq * self.chanwidth
+            self.nfreq        = nfreq
+            self.dfreq        = nfreq * self.chanwidth
         else:
-            self.nfreq    = dfreq / self.chanwidth
-            self.dfreq    = dfreq
+            self.nfreq        = dfreq / self.chanwidth
+            self.dfreq        = dfreq
         # since we are looking forward and backward, divide intervals by 2
         self.dt               =     self.dt     / 2.
         self.nt               = int(int(self.nt   ) / 2. + (self.nt    % 2 > 0))
@@ -116,34 +117,33 @@ class CovWeights:
         self.A0               = self.A0.reshape((self.nt,self.nbl))
         self.A1               = self.A1.reshape((self.nt,self.nbl))
         self.ant1             = np.arange(self.nAnt)
-        residuals             = np.zeros_like(self.residualdata,dtype=np.complex64)
+        self.residuals             = np.zeros_like(self.residualdata,dtype=np.complex64)
         # remove crosspols
-        residuals[:,:,:,0]    = self.residualdata[:,:,:,0]
-        residuals[:,:,:,1]    = self.residualdata[:,:,:,3]
+        self.residuals[:,:,:,0]    = self.residualdata[:,:,:,0]
+        self.residuals[:,:,:,1]    = self.residualdata[:,:,:,3]
         # build antenna coefficient array
         self.CoeffArray       = np.zeros((self.nAnt, self.nt, self.nChan))
 
-
+    ### calculate the weights
     def FindWeights(self):
-        # start calculating the weights
         if self.verbose:
             print("Begin calculating antenna-based coefficients")
-        mask = np.zeros_like(residuals).astype(bool)
+        mask   = np.zeros_like(self.residuals).astype(bool)
         for t_i,t_val in enumerate(self.tvals):
             # mask for relevant times within dt
-            tmask = ( (t_val+self.dt  >= self.tvals) * (t_val-self.dt  <= self.tvals))
+            tmask  = ( (t_val+self.dt  >= self.tvals) * (t_val-self.dt  <= self.tvals))
             # build weights for each antenna at time t_i
             for ant in self.ant1:
-                Resids    = residuals[tmask]
+                Resids = self.residuals[tmask]
                 # build mask for set of vis w/ ant-ant_i and ant_i-ant bls
-                antmask   = (self.A0[tmask]==ant) + (self.A1[tmask]==ant)
-                AntResids = Resids[antmask]
-                AbsResids = np.abs(AntResids)
+                antmask    = (self.A0[tmask]==ant) + (self.A1[tmask]==ant)
+                AntResids  = Resids[antmask]
+                AbsResids  = np.abs(AntResids)
                 # before averaging operation, check if the data is not flagged to save time
                 for chan_i in range(self.nChan):
-                    chanmin = max(0,chan_i-self.nfreq)
-                    vals    = AntResids[:,chanmin:(chan_i+self.nfreq),:]
-                    weights = AbsResids[:,chanmin:(chan_i+self.nfreq),:]                    
+                    chanmin    = max(0,chan_i-self.nfreq)
+                    vals       = AntResids[:,chanmin:(chan_i+self.nfreq),:]
+                    weights    = AbsResids[:,chanmin:(chan_i+self.nfreq),:]                    
                     if np.sum(weights) > 0:
                         self.CoeffArray[ant, t_i, chan_i] = np.average( np.real( vals * vals.conj() ), \
                                                                         weights = weights.astype(bool) )
@@ -169,7 +169,8 @@ class CovWeights:
         if self.verbose:
             print("Save coefficient array as %s."%coeffFilename)
         np.save(coeffFilename,self.CoeffArray)
-    
+
+    ### save the weights in the designated measurement set column
     def SaveWeights(self):
         if self.verbose:
             print("Begin saving the data")
@@ -212,13 +213,14 @@ class CovWeights:
                 print("No colname given, so weights not saved in MS.")
         self.weights = w
 
+    ### exit gracefully
     def close(self):
-        # exit files gracefully
         self.ants.close()
         self.ms.close()
-                          
+
+    ### create diagnostic plots if requested
     def CreateDiagnosticPlots(self):
-        # create the output direectory
+        # create the output directory
         os.makedirs(self.DiagDir)
         # create the coefficient directory
         self.CoeffDict = {"Times"    : self.tvals,
@@ -242,6 +244,7 @@ class CovWeights:
         
         
 ### auxiliary functions ###
+### printer for when needed
 def PrintProgress(currentIter,maxIter,msg=""):
     sys.stdout.flush()
     if msg=="":
@@ -250,6 +253,7 @@ def PrintProgress(currentIter,maxIter,msg=""):
     if currentIter==(maxIter-1):
         sys.stdout.write("\n")
 
+### parser
 def readArguments():
     parser=argparse.ArgumentParser("Calculate visibility imagin weights based on calibration quality")
     parser.add_argument("-v","--verbose",        help="Be verbose, say everything program does. Default is False",required=False,action="store_true")
@@ -284,6 +288,7 @@ def readArguments():
 ### if program is called as main ###
 if __name__=="__main__":
     start_time     = time.time()
+    # read arguments
     args           = readArguments()
     verb           = args["verbose"]
     mslist         = args["filename"]
@@ -299,6 +304,7 @@ if __name__=="__main__":
     phaseonly      = args["phaseonly"]
     #normalise      = args["normalise"]
     diagdir        = args["diagnostics"]
+    # calculate weights for each measurement set
     for msname in mslist:
         if verb:
             print("Finding time-covariance weights for: %s"%msname)
