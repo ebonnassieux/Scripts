@@ -7,7 +7,6 @@ import warnings
 import time
 import argparse
 from astropy.time import Time
-
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
@@ -357,11 +356,11 @@ class CovWeights:
             if self.verbose:
                 print("No colname given, so weights not saved in MS.")
         self.weights = w
-        if self.SaveDataProducts:
-            weightsfilename=self.DiagDir+self.weightscolname+"."+self.basename+".npy"
-            if self.verbose:
-                print("Saving weights column for this run in %s"%weightsfilename)
-            np.save(weightsfilename,self.weights)
+#        if self.SaveDataProducts:
+#            weightsfilename=self.DiagDir+self.weightscolname+"."+self.basename+".npy"
+#            if self.verbose:
+#                print("Saving weights column for this run in %s"%weightsfilename)
+#            np.save(weightsfilename,self.weights)
                 
     ### exit gracefully
     def close(self):
