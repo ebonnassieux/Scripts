@@ -38,6 +38,8 @@ class CovWeights:
     SaveDataProducts : bool
        flag to save data products and diagnostics in designated directory, in
        addition to the MS weights column. Default True
+    basename    : str
+       string to add to the diagnostics and dataproducts saved for a given run. Default NeReVar
     uvcut            : array of floats
        values [km] for inner and outer uvcuts to apply while calculating the gain
        variance values. default [0,20000]
@@ -69,8 +71,8 @@ class CovWeights:
     ### initialise the instance.
     def __init__(self, MSName, dt=0, nt=0, dfreq=0, nchan=0, SaveDataProducts=True, \
                  uvcut=[0,2000], gainfile=None, phaseonly=True,antnorm=False, \
-                 modelcolname="MODEL_DATA", datacolname="DATA", \
-                 weightscolname="IMAGING_WEIGHT", verbose=True,diagdir="NeReVar"):
+                 modelcolname="MODEL_DATA", datacolname="DATA", basename="NeReVar", \
+                 weightscolname="IMAGING_WEIGHT", verbose=True, diagdir="NeReVar"):
         """
         A class used to generate interferometric quality-based weighting scheme values.
         Standard use is to instantiate the class, then FindWeights, SaveWeights, close,
@@ -94,6 +96,8 @@ class CovWeights:
         SaveDataProducts : bool
             flag to save data products and diagnostics in designated directory, in
             addition to the MS weights column. Default True
+        basename    : str
+            string to add to the diagnostics and dataproducts saved for a given run. Default NeReVar
         uvcut            : [float, float]
             values [km] for inner and outer uvcuts to apply while calculating the gain
             variance values. default [0,20000]
@@ -135,6 +139,7 @@ class CovWeights:
                 self.DiagDir  = self.MSName+"/"+diagdir
             if self.DiagDir[-1]!="/":
                 self.DiagDir=self.DiagDir+"/"
+            self.basename     = basename
         self.dfreq            = int(dfreq / 2)
         self.uvcut            = uvcut
         self.gainfile         = gainfile
@@ -273,21 +278,20 @@ class CovWeights:
                     antcoeffs = self.CoeffArray[i,:,:]
                     # check that the full antenna is not flagged
                     if np.sum(antcoeffs)!=0:
-                        self.CoeffArray[i,:,:] = np.average(antcoeffs, weights=antcoeffs.astype(bool))
-                        
+                        self.CoeffArray[i,:,:] = np.average(antcoeffs, weights=antcoeffs.astype(bool))                        
             else:
                 self.CoeffArray = self.CoeffArray /    \
                     np.average( self.CoeffArray, weights = self.CoeffArray.astype(bool))
             
-            # create diagnostic directory if not yet created
-            if self.SaveDataProducts:
-                if not os.path.exists(self.DiagDir):
-                    os.makedirs(self.DiagDir)
-                coeffFilename = self.DiagDir+"CoeffArray.npy"
-                if self.verbose:
-                    print("Save coefficient array as %s."%coeffFilename)
-                np.save(coeffFilename,self.CoeffArray)
-
+        # create diagnostic directory if not yet created
+        if self.SaveDataProducts:
+            if not os.path.exists(self.DiagDir):
+                os.makedirs(self.DiagDir)
+            coeffFilename = self.DiagDir+self.basename+".CoeffArray.npy"
+            if self.verbose:
+                print("Save coefficient array as %s"%coeffFilename)
+            np.save(coeffFilename,self.CoeffArray)
+                
     ### save the weights in the designated measurement set column
     def SaveWeights(self):
         if self.verbose:
@@ -330,7 +334,12 @@ class CovWeights:
             if self.verbose:
                 print("No colname given, so weights not saved in MS.")
         self.weights = w
-
+        if self.SaveDataProducts:
+            weightsfilename=self.DiagDir+self.basename+"."+self.weightscolname+".npy"
+            if self.verbose:
+                print("Saving weights column for this run in %s"%weightsfilename)
+            np.save(weightsfilename,self.weights)
+                
     ### exit gracefully
     def close(self):
         """
@@ -454,8 +463,11 @@ def readArguments():
                         "this means that gain information doesn't need to be read.",required=False,action="store_true")
     parser.add_argument("--diagnostics",type=str, default="NeReVar_Diagnostics",required=False,\
                         help="Full path and name of folder in which to save diagnostic plots. By default, will save in MS/NeReVar_Diagnostics")
+    parser.add_argument("--basename",   type=str, default="NeReVar", required=False, help="Base name string to add to diagnostic file names")
     parser.add_argument("--NormPerAnt",            help="Normalise gains per antenna to avoid suppressing long baselines", \
                         required=False,action="store_true")
+    parser.add_argument("--nodataproducts",   help="Use if you only want NeReVar to write weights to your MS file, without "+\
+                        "creating diagnostic plots nor saving coefficients array or weights column separately.",required=False,action="store_true")
     args=parser.parse_args()
     return vars(args)
 
@@ -476,20 +488,23 @@ if __name__=="__main__":
     modelcolname   = args["modelcol"]
     datacolname    = args["datacol"]
     gainfile       = args["gainfile"]
-    uvcut          = args["uvcutkm"]*1000
+    uvcut          = np.array(args["uvcutkm"])*1000
     phaseonly      = args["phaseonly"]
     NormPerAnt     = args["NormPerAnt"]
     diagdir        = args["diagnostics"]
+    keepdiags      = bool(args["nodataproducts"] - 1)
+    basename       = args["basename"]
     # calculate weights for each measurement set
     for msname in mslist:
         if verb:
             print("Finding time-covariance weights for: %s"%msname)
         covweights=CovWeights(MSName=msname,dt=dt,nt=nt, nchan=nchan, dfreq=dfreq, gainfile=gainfile,uvcut=uvcut,phaseonly=phaseonly, \
                               antnorm=NormPerAnt, modelcolname=modelcolname, datacolname=datacolname, weightscolname=weightscolname,verbose=verb, \
-                              diagdir=diagdir)
+                              diagdir=diagdir,SaveDataProducts=keepdiags, basename=basename)
         coefficients=covweights.FindWeights()
         covweights.SaveWeights()
-        covweights.CreateDiagnosticPlots()
+        if keepdiags:
+            covweights.CreateDiagnosticPlots()
         covweights.close()
         if verb:
             print("Total runtime: %f min"%((time.time()-start_time)/60.))
