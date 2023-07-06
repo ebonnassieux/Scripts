@@ -204,7 +204,7 @@ class CovWeights:
         if self.modelcolname in self.colnames and self.datacolname in self.colnames:
             if self.verbose:
                 print("Creating RESIDUAL_DATA equivalent from %s - %s"%(self.datacolname,self.modelcolname))
-            self.residualdata = ms.getcol(self.datacolname)-ms.getcol(self.modelcolname)
+            self.residualdata = self.ms.getcol(self.datacolname)-self.ms.getcol(self.modelcolname)
         elif "RESIDUAL_DATA" in self.colnames:
             if self.verbose:
                 print("Reading RESIDUAL_DATA directly from MS")
