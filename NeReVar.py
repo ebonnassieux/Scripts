@@ -72,7 +72,7 @@ class CovWeights:
     def __init__(self, MSName, dt=0, nt=0, dfreq=0, nchan=0, SaveDataProducts=True, \
                  uvcut=[0,2000], gainfile=None, phaseonly=True,antnorm=False, \
                  modelcolname="MODEL_DATA", datacolname="DATA", basename="NeReVar", \
-                 weightscolname="IMAGING_WEIGHT", verbose=True, diagdir="NeReVar"):
+                 weightscolname="IMAGING_WEIGHT", verbose=True, diagdir="NeReVarDiagnostics"):
         """
         A class used to generate interferometric quality-based weighting scheme values.
         Standard use is to instantiate the class, then FindWeights, SaveWeights, close,
@@ -122,21 +122,25 @@ class CovWeights:
             flag to print out stdout information. Default: True
         diagdir          : str
             Name of the directory in which to place data products and
-            diagnostic plots. Will be created if not existing. Default is NeReVar.
+            diagnostic plots. Will be created if not existing. Default is NeReVarDiagnostics
         """
         # define verbosity
         self.verbose          = verbose
+        # define absolute directories
+        cwd                   = os.getcwd()+"/"
         if MSName[-1]=="/":
-            self.MSName       = MSName[0:-1]
+            self.MSName       = cwd+MSName[0:-1]
         else:
-            self.MSName       = MSName
+            self.MSName       = cwd+MSName
         self.SaveDataProducts = SaveDataProducts
         if self.SaveDataProducts:
+            if diagdir=="":
+                diagdir       = self.MSName+"/NeReVarDiagnostics"
             # define directory in which to save stuff + diagnostics
             if diagdir[0]=="/":
                 self.DiagDir  = diagdir
             else:
-                self.DiagDir  = self.MSName+"/"+diagdir
+                self.DiagDir  = cwd+diagdir
             if self.DiagDir[-1]!="/":
                 self.DiagDir=self.DiagDir+"/"
             self.basename     = basename
@@ -274,7 +278,6 @@ class CovWeights:
             # if requested, flag per antenna
             if self.antnorm:
                 for i in range(self.nAnt):
-                    print(self.CoeffArray.shape)
                     antcoeffs = self.CoeffArray[i,:,:]
                     # check that the full antenna is not flagged
                     if np.sum(antcoeffs)!=0:
@@ -287,7 +290,7 @@ class CovWeights:
         if self.SaveDataProducts:
             if not os.path.exists(self.DiagDir):
                 os.makedirs(self.DiagDir)
-            coeffFilename = self.DiagDir+self.basename+".CoeffArray.npy"
+            coeffFilename = self.DiagDir+"CoeffArray."+self.basename+".npy"
             if self.verbose:
                 print("Save coefficient array as %s"%coeffFilename)
             np.save(coeffFilename,self.CoeffArray)
@@ -335,7 +338,7 @@ class CovWeights:
                 print("No colname given, so weights not saved in MS.")
         self.weights = w
         if self.SaveDataProducts:
-            weightsfilename=self.DiagDir+self.basename+"."+self.weightscolname+".npy"
+            weightsfilename=self.DiagDir+self.weightscolname+"."+self.basename+".npy"
             if self.verbose:
                 print("Saving weights column for this run in %s"%weightsfilename)
             np.save(weightsfilename,self.weights)
@@ -461,8 +464,8 @@ def readArguments():
     parser.add_argument("--uvcutkm",   type=float, nargs=2,default=[0,3000],required=False,help="uvcut used during calibration, in km.")
     parser.add_argument("--phaseonly",             help="Use if calibration was phase-only; "+\
                         "this means that gain information doesn't need to be read.",required=False,action="store_true")
-    parser.add_argument("--diagnostics",type=str, default="NeReVar_Diagnostics",required=False,\
-                        help="Full path and name of folder in which to save diagnostic plots. By default, will save in MS/NeReVar_Diagnostics")
+    parser.add_argument("--DiagDir",type=str, default="",required=False,\
+                        help="Path to folder in which to save diagnostic plots. If not set, program will save in MS/NeReVarDiagnostics")
     parser.add_argument("--basename",   type=str, default="NeReVar", required=False, help="Base name string to add to diagnostic file names")
     parser.add_argument("--NormPerAnt",            help="Normalise gains per antenna to avoid suppressing long baselines", \
                         required=False,action="store_true")
@@ -491,16 +494,19 @@ if __name__=="__main__":
     uvcut          = np.array(args["uvcutkm"])*1000
     phaseonly      = args["phaseonly"]
     NormPerAnt     = args["NormPerAnt"]
-    diagdir        = args["diagnostics"]
+    diagdir        = args["DiagDir"]
     keepdiags      = bool(args["nodataproducts"] - 1)
     basename       = args["basename"]
     # calculate weights for each measurement set
     for msname in mslist:
         if verb:
             print("Finding time-covariance weights for: %s"%msname)
-        covweights=CovWeights(MSName=msname,dt=dt,nt=nt, nchan=nchan, dfreq=dfreq, gainfile=gainfile,uvcut=uvcut,phaseonly=phaseonly, \
-                              antnorm=NormPerAnt, modelcolname=modelcolname, datacolname=datacolname, weightscolname=weightscolname,verbose=verb, \
-                              diagdir=diagdir,SaveDataProducts=keepdiags, basename=basename)
+        covweights=CovWeights(MSName=msname,dt=dt,nt=nt, nchan=nchan, dfreq=dfreq,\
+                              gainfile=gainfile,uvcut=uvcut,phaseonly=phaseonly, \
+                              antnorm=NormPerAnt, modelcolname=modelcolname, \
+                              datacolname=datacolname, weightscolname=weightscolname,\
+                              verbose=verb, diagdir=diagdir,SaveDataProducts=keepdiags,\
+                              basename=basename)
         coefficients=covweights.FindWeights()
         covweights.SaveWeights()
         if keepdiags:
