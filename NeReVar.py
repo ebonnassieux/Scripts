@@ -174,10 +174,10 @@ class CovWeights:
             if dt!=0:
                 if self.verbose:
                     print("dt and nt are incompatible; nt is retained.")
-            self.nt           = nt
-            self.dt           = nt*self.dumptime
+            self.ntimesteps   = ntimtesteps
+            self.dt           = ntimesteps * self.dumptime
         else:
-            self.nt           = dt / self.dumptime
+            self.ntimesteps   = dt / self.dumptime
             self.dt           = dt
         # load frequency information
         self.freqs            = table(self.ms.getkeyword("SPECTRAL_WINDOW"),ack=self.verbose)
@@ -193,9 +193,9 @@ class CovWeights:
             self.nchan        = dfreq / self.chanwidth
             self.dfreq        = dfreq
         # since we are looking forward and backward, divide intervals by 2
-        self.dt               =     self.dt     / 2.
-        self.nt               = int(int(self.nt   ) / 2. + (self.nt    % 2 > 0))
-        self.dfreq            =     self.dfreq  / 2.
+        self.dt               =         self.dt     / 2.
+        self.ntimesteps       = int(int(self.ntimesteps   ) / 2. + (self.ntimesteps    % 2 > 0))
+        self.dfreq            =         self.dfreq  / 2.
         self.nchan            = int(int(self.nchan) / 2. + (self.nchan % 2 > 0))
         self.nbl              = np.where(self.tarray==self.tarray[0])[0].size
         self.colnames         = self.ms.colnames()
