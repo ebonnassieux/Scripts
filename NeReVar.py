@@ -162,7 +162,6 @@ class CovWeights:
         self.A1               = self.ms.getcol("ANTENNA2")
         # create time array
         self.tarray           = self.ms.getcol("TIME")
-        self.t0               = np.min(self.tarray)
         self.tvals            = np.sort(list(set(self.tarray)))
         self.t0               = np.min(self.tvals)
         self.dumptime         = self.tvals[1] - self.tvals[0]
@@ -205,7 +204,7 @@ class CovWeights:
         if self.modelcolname in self.colnames and self.datacolname in self.colnames:
             if self.verbose:
                 print("Creating RESIDUAL_DATA equivalent from %s - %s"%(self.datacolname,self.modelcolname))
-            self.residualdata = ms.getcol(self.datacolname)-ms.getcol(self.datacolname)
+            self.residualdata = ms.getcol(self.datacolname)-ms.getcol(self.modelcolname)
         elif "RESIDUAL_DATA" in self.colnames:
             if self.verbose:
                 print("Reading RESIDUAL_DATA directly from MS")
@@ -248,7 +247,7 @@ class CovWeights:
         """
         if self.verbose:
             print("Begin calculating antenna-based coefficients")
-        mask   = np.zeros_like(self.residuals).astype(bool)
+        mask   = np.zeros_like(self.resiuals).astype(bool)
         for t_i,t_val in enumerate(self.tvals):
             # mask for relevant times within dt
             tmask  = ( (t_val+self.dt  >= self.tvals) * (t_val-self.dt  <= self.tvals))
