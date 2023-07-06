@@ -23,56 +23,60 @@ class CovWeights:
     Attributes:
     --------------
     MSName           : str
-       a string containing the path to the Measurement Set for which to 
-       generate weighting scheme
+        a string containing the path to the Measurement Set for which to 
+        generate weighting scheme
     dt               : float
-       timescale [min] over which the gain variances should be calculated. Default 0
+        timescale [min] over which the gain variances should be calculated. Default 0
     nt               : int
-       number of timesteps over which gain variances should be calculated. Used
-       as alternative to dt. Default 0
+        number of timesteps over which gain variances should be calculated. Used
+        as alternative to dt. Default 0
     dfreq            : float
-       bandwidth [Mhz] over which the gain variances should be calculated. Default 0
+        bandwidth [Mhz] over which the gain variances should be calculated. Default 0
     nchan            : int
-       number of channels over which gain variances should be calculated. Used
-       as alternative to dfreq. Default 0
+        number of channels over which gain variances should be calculated. Used
+        as alternative to dfreq. Default 0
     SaveDataProducts : bool
-       flag to save data products and diagnostics in designated directory, in
-       addition to the MS weights column. Default True
+        flag to save data products and diagnostics in designated directory, in
+        addition to the MS weights column. Default True
     basename    : str
-       string to add to the diagnostics and dataproducts saved for a given run. Default NeReVar
+        string to add to the diagnostics and dataproducts saved for a given run. Default NeReVar
     uvcut            : array of floats
-       values [km] for inner and outer uvcuts to apply while calculating the gain
-       variance values. default [0,20000]
+        values [km] for inner and outer uvcuts to apply while calculating the gain
+        variance values. default [0,20000]
     gainfile         : str
-       not used yet. Will eventually allow for specific gain file to be read to
-       extract relevant quantities. Default None
+        not used yet. Will eventually allow for specific gain file to be read to
+        extract relevant quantities. Default None
     phaseonly        : bool
-       flag to avoid using residual amplitude values directly. Can only be set to
-       False if amplitude gains are provided through a gainfile. Default True
+        flag to avoid using residual amplitude values directly. Can only be set to
+        False if amplitude gains are provided through a gainfile. Default True
     antnorm          : bool
-       flag to normalise antenna coefficient array per antenna rather than globally.
-       functionality not yet implemented. Default False.
+        flag to normalise antenna coefficient array per antenna rather than globally.
+        functionality not yet implemented. Default False.
     modelcolname     : str
-       name of the gain-corrupted model data column to be read in order to generate
-       the residuals. Default MODEL_DATA.
+        name of the gain-corrupted model data column to be read in order to generate
+        the residuals. Default MODEL_DATA.
     datacolname      : str
-       name of the raw data column from which to subtract modelcolname visibilities.
-       Default DATA.
+        name of the raw data column from which to subtract modelcolname visibilities.
+        Default DATA.
     weightscolname   : str
-       name of the MS column in which to save the weighting scheme generated. Will be
-       created if not already there. Default IMAGING_WEIGHT.
+        name of the MS column in which to save the weighting scheme generated. Will be
+        created if not already there. Default IMAGING_WEIGHT.
     verbose          : bool
-       flag to print out stdout information. Default: True
+        flag to print out stdout information. Default: True
     diagdir          : str
-       Name of the directory in which to place data products and 
-       diagnostic plots. Will be created if not existing. Default is NeReVar.
+        Name of the directory in which to place data products and 
+        diagnostic plots. Will be created if not existing. Default is NeReVar.
+    useWS            : bool
+        Flag to use WEIGHT_SPECTRUM column to calculate the variances. If that
+        column is informative, this should improve the final results.
     """
 
     ### initialise the instance.
     def __init__(self, MSName, dt=0, nt=0, dfreq=0, nchan=0, SaveDataProducts=True, \
                  uvcut=[0,2000], gainfile=None, phaseonly=True,antnorm=False, \
                  modelcolname="MODEL_DATA", datacolname="DATA", basename="NeReVar", \
-                 weightscolname="IMAGING_WEIGHT", verbose=True, diagdir="NeReVarDiagnostics"):
+                 weightscolname="IMAGING_WEIGHT", verbose=True, diagdir="NeReVarDiagnostics", \
+                 useWS=False):
         """
         A class used to generate interferometric quality-based weighting scheme values.
         Standard use is to instantiate the class, then FindWeights, SaveWeights, close,
@@ -123,7 +127,10 @@ class CovWeights:
         diagdir          : str
             Name of the directory in which to place data products and
             diagnostic plots. Will be created if not existing. Default is NeReVarDiagnostics
-        """
+        useWS            : bool
+            Flag to use WEIGHT_SPECTRUM column to calculate the variances. If that
+            column is informative, this should improve the final results. 
+        """        
         # define verbosity
         self.verbose          = verbose
         # define absolute directories
@@ -213,6 +220,9 @@ class CovWeights:
             if self.verbose:
                 print("Model, data colnames not present; RESIDUAL_DATA column not in measurement set: reading CORRECTED_DATA")
             self.residualdata = self.ms.getcol("CORRECTED_DATA")
+        # check for WEIGHT_SPECTRUM request
+        self.useWS            = useWS
+        # get the shape of the data array
         self.nChan            = self.residualdata.shape[1]
         self.nPola            = self.residualdata.shape[2]
         self.nt               = int(self.residualdata.shape[0]/self.nbl)
@@ -221,8 +231,12 @@ class CovWeights:
         self.uvlen            = np.sqrt(self.u**2+self.v**2)
         self.flags[self.uvlen>self.uvcut[1]]=1
         self.flags[self.uvlen<self.uvcut[0]]=1
-        # apply flags to data
+        # apply flags to data and weight_spectrum if requested
         self.residualdata[self.flags==1]=0
+        if self.useWS:
+            self.w_spectrum   = self.ms.getcol("WEIGHT_SPECTRUM")
+            self.w_spectrum[self.flags==1]=0
+            self.w_spectrum   = self.w_spectrum.reshape((self.nt,self.nbl,self.nChan,self.nPola))
         # reshape antennas and data columns for convenience [LOFAR only]
         self.residualdata     = self.residualdata.reshape((self.nt,self.nbl,self.nChan,self.nPola))
         self.flags            = self.flags.reshape((self.nt,self.nbl,self.nChan,self.nPola))
@@ -230,7 +244,7 @@ class CovWeights:
         self.A0               = self.A0.reshape((self.nt,self.nbl))
         self.A1               = self.A1.reshape((self.nt,self.nbl))
         self.ant1             = np.arange(self.nAnt)
-        self.residuals             = np.zeros_like(self.residualdata,dtype=np.complex64)
+        self.residuals        = np.zeros_like(self.residualdata,dtype=np.complex64)
         # remove crosspols
         self.residuals[:,:,:,0]    = self.residualdata[:,:,:,0]
         self.residuals[:,:,:,1]    = self.residualdata[:,:,:,3]
@@ -247,25 +261,30 @@ class CovWeights:
         """
         if self.verbose:
             print("Begin calculating antenna-based coefficients")
-        mask   = np.zeros_like(self.resiuals).astype(bool)
+        mask   = np.zeros_like(self.residuals).astype(bool)
         for t_i,t_val in enumerate(self.tvals):
             # mask for relevant times within dt
             tmask  = ( (t_val+self.dt  >= self.tvals) * (t_val-self.dt  <= self.tvals))
-            # build weights for each antenna at time t_i
+            Resids   = self.residuals[tmask]            
+            # build weights for each antenna at time t_i            
+            if self.useWS:
+                tweightvals = self.w_spectrum[tmask]
             for ant in self.ant1:
-                Resids = self.residuals[tmask]
                 # build mask for set of vis w/ ant-ant_i and ant_i-ant bls
                 antmask    = (self.A0[tmask]==ant) + (self.A1[tmask]==ant)
-                AntResids  = Resids[antmask]
-                AbsResids  = np.abs(AntResids)
+                AntResids  = Resids[antmask]                
+                if self.useWS:
+                    weightvals = tweightvals[antmask]
+                else:
+                    weightvals = np.abs(AntResids)
                 # before averaging operation, check if the data is not flagged to save time
                 for chan_i in range(self.nChan):
                     chanmin    = max(0,chan_i-self.nchan)
                     vals       = AntResids[:,chanmin:(chan_i+self.nchan),:]
-                    weights    = AbsResids[:,chanmin:(chan_i+self.nchan),:]                    
+                    weights    = weightvals[:,chanmin:(chan_i+self.nchan),:].astype(bool)
                     if np.sum(weights) > 0:
                         self.CoeffArray[ant, t_i, chan_i] = np.average( np.real( vals * vals.conj() ), \
-                                                                        weights = weights.astype(bool) )
+                                                                        weights = weights)
                     else:
                         # if flagged, set var estimates to 0
                         self.CoeffArray[ant, t_i, chan_i] = 0
@@ -328,7 +347,9 @@ class CovWeights:
                         w[i,j,k,k1] = weights
             if self.verbose:
                 PrintProgress(i,self.nt)
-        w=w.reshape(self.nt*self.nbl,self.nChan,self.nPola)
+        if self.useWS:
+            w = w*self.w_spectrum
+        w=w.reshape(self.nt*self.nbl,self.nChan,self.nPola)        
         w = w / np.average(w,weights=w.astype(bool))
         if self.weightscolname!=None:
             self.ms.putcol(self.weightscolname,w)
@@ -470,6 +491,8 @@ def readArguments():
                         required=False,action="store_true")
     parser.add_argument("--nodataproducts",   help="Use if you only want NeReVar to write weights to your MS file, without "+\
                         "creating diagnostic plots nor saving coefficients array or weights column separately.",required=False,action="store_true")
+    parser.add_argument("--use_weight_spectrum", help="Flag to use WEIGHT_SPECTRUM for the estimation, and as the basis for correction.",\
+                        required=False, action="store_true")
     args=parser.parse_args()
     return vars(args)
 
@@ -496,6 +519,7 @@ if __name__=="__main__":
     diagdir        = args["DiagDir"]
     keepdiags      = bool(args["nodataproducts"] - 1)
     basename       = args["basename"]
+    useWS          = bool(args["use_weight_spectrum"])
     # calculate weights for each measurement set
     for msname in mslist:
         if verb:
@@ -505,7 +529,7 @@ if __name__=="__main__":
                               antnorm=NormPerAnt, modelcolname=modelcolname, \
                               datacolname=datacolname, weightscolname=weightscolname,\
                               verbose=verb, diagdir=diagdir,SaveDataProducts=keepdiags,\
-                              basename=basename)
+                              basename=basename, useWS = useWS)
         coefficients=covweights.FindWeights()
         covweights.SaveWeights()
         if keepdiags:
