@@ -459,11 +459,11 @@ def readArguments():
                         "Default is DATA.",required=False,default="DATA")
     parser.add_argument("--modelcol",  type=str,   help="Name of the weights column name you want to save the weights to. "+\
                         "Default is MODEL_DATA_CORR.",required=False,default="MODEL_DATA_CORR")
-    parser.add_argument("--gainfile",  type=str,   help="Name of the gain file you want to read to rebuild the calibration quality weights."+\
-                        " If no file is given, equivalent to rebuilding weights for phase-only calibration.",required=False,default="")
+#    parser.add_argument("--gainfile",  type=str,   help="Name of the gain file you want to read to rebuild the calibration quality weights."+\
+#                        " If no file is given, equivalent to rebuilding weights for phase-only calibration.",required=False,default="")
     parser.add_argument("--uvcutkm",   type=float, nargs=2,default=[0,3000],required=False,help="uvcut used during calibration, in km.")
-    parser.add_argument("--phaseonly",             help="Use if calibration was phase-only; "+\
-                        "this means that gain information doesn't need to be read.",required=False,action="store_true")
+#    parser.add_argument("--phaseonly",             help="Use if calibration was phase-only; "+\
+#                        "this means that gain information doesn't need to be read.",required=False,action="store_true")
     parser.add_argument("--DiagDir",type=str, default="",required=False,\
                         help="Path to folder in which to save diagnostic plots. If not set, program will save in MS/NeReVarDiagnostics")
     parser.add_argument("--basename",   type=str, default="NeReVar", required=False, help="Base name string to add to diagnostic file names")
@@ -490,9 +490,9 @@ if __name__=="__main__":
     weightscolname = args["weightcol"]
     modelcolname   = args["modelcol"]
     datacolname    = args["datacol"]
-    gainfile       = args["gainfile"]
+    gainfile       = None #args["gainfile"]
     uvcut          = np.array(args["uvcutkm"])*1000
-    phaseonly      = args["phaseonly"]
+    phaseonly      = True # args["phaseonly"]
     NormPerAnt     = args["NormPerAnt"]
     diagdir        = args["DiagDir"]
     keepdiags      = bool(args["nodataproducts"] - 1)
