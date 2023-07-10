@@ -260,35 +260,41 @@ class CovWeights:
         """
         if self.verbose:
             print("Begin calculating antenna-based coefficients")
-        mask   = np.zeros_like(self.residuals).astype(bool)
-        for t_i,t_val in enumerate(self.tvals):
+        mask      = np.zeros_like(self.residuals).astype(bool)        
+        chanrange = range(self.nChan)
+        t_i       = 0
+        for t_val in self.tvals:
             # mask for relevant times within dt
-            tmask  = ( (t_val+self.dt  >= self.tvals) * (t_val-self.dt  <= self.tvals))
-            Resids   = self.residuals[tmask]            
+            tmask    = ( (t_val+self.dt  >= self.tvals) * (t_val-self.dt  <= self.tvals))
+            Resids   = self.residuals[tmask]
+            A0, A1   = self.A0[tmask], self.A1[tmask]
             # build weights for each antenna at time t_i            
             if self.useWS:
                 tweightvals = self.w_spectrum[tmask]
             for ant in self.ant1:
                 # build mask for set of vis w/ ant-ant_i and ant_i-ant bls
-                antmask    = (self.A0[tmask]==ant) + (self.A1[tmask]==ant)
+                antmask    = (A0==ant) + (A1==ant)   ### apply time mask prior to the for loop
                 AntResids  = Resids[antmask]                
                 if self.useWS:
                     weightvals = tweightvals[antmask]
                 else:
                     weightvals = np.abs(AntResids)
                 # before averaging operation, check if the data is not flagged to save time
-                for chan_i in range(self.nChan):
+                for chan_i in chanrange:
                     chanmin    = max(0,chan_i-self.nchan)
                     vals       = AntResids[:,chanmin:(chan_i+self.nchan),:]
                     weights    = weightvals[:,chanmin:(chan_i+self.nchan),:].astype(bool)
                     if np.sum(weights) > 0:
-                        self.CoeffArray[ant, t_i, chan_i] = np.average( np.real( vals * vals.conj() ), \
-                                                                        weights = weights)
+                        vals = vals[weights]
+#                        self.CoeffArray[ant, t_i, chan_i] = np.average( np.real( vals * vals.conj() ), \
+#                                                                        weights = weights)
+                        self.CoeffArray[ant, t_i, chan_i] = np.mean( np.real( vals * vals.conj() ))
                     else:
                         # if flagged, set var estimates to 0
                         self.CoeffArray[ant, t_i, chan_i] = 0
             if self.verbose:
                 PrintProgress(t_i,self.nt)
+            t_i = t_i + 1
         for i in range(self.nAnt):
             # flag any potential NaNs
             self.CoeffArray[np.isnan(self.CoeffArray)]=np.inf
@@ -339,7 +345,7 @@ class CovWeights:
                     var1=self.CoeffArray[A0ind[j],i,k]
                     var2=self.CoeffArray[A1ind[j],i,k]
                     if var1 and var2 != 0:
-                        weights = 1. / ( var1 + var2 )
+                        weights = np.sqrt( 1. / ( var1 + var2 ))
                     else:
                         weights=0
                     for k1 in range(self.nPola):
@@ -356,6 +362,7 @@ class CovWeights:
             if self.verbose:
                 print("No colname given, so weights not saved in MS.")
         self.weights = w
+
 #        if self.SaveDataProducts:
 #            weightsfilename=self.DiagDir+self.weightscolname+"."+self.basename+".npy"
 #            if self.verbose:
@@ -478,11 +485,7 @@ def readArguments():
                         "Default is DATA.",required=False,default="DATA")
     parser.add_argument("--modelcol",  type=str,   help="Name of the weights column name you want to save the weights to. "+\
                         "Default is MODEL_DATA_CORR.",required=False,default="MODEL_DATA_CORR")
-#    parser.add_argument("--gainfile",  type=str,   help="Name of the gain file you want to read to rebuild the calibration quality weights."+\
-#                        " If no file is given, equivalent to rebuilding weights for phase-only calibration.",required=False,default="")
     parser.add_argument("--uvcutkm",   type=float, nargs=2,default=[0,3000],required=False,help="uvcut used during calibration, in km.")
-#    parser.add_argument("--phaseonly",             help="Use if calibration was phase-only; "+\
-#                        "this means that gain information doesn't need to be read.",required=False,action="store_true")
     parser.add_argument("--DiagDir",type=str, default="",required=False,\
                         help="Path to folder in which to save diagnostic plots. If not set, program will save in MS/NeReVarDiagnostics")
     parser.add_argument("--basename",   type=str, default="NeReVar", required=False, help="Base name string to add to diagnostic file names")
@@ -494,7 +497,6 @@ def readArguments():
                         required=False, action="store_true")
     args=parser.parse_args()
     return vars(args)
-
 
 
 ### if program is called as main ###
