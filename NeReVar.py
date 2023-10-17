@@ -576,34 +576,41 @@ def PrintProgress(currentIter,maxIter,msg=""):
 ### parser
 def readArguments():
     parser=argparse.ArgumentParser("Calculate visibility imagin weights based on calibration quality")
-    parser.add_argument("-v","--verbose",          help="Be verbose, say everything program does. Default is False",required=False,action="store_true")
-    parser.add_argument("--filename",  type=str,   help="Name of the measurement set for which weights want to be calculated",required=True,nargs="+")
+    parser.add_argument("-v","--verbose",          help="Be verbose, say everything program does.",\
+                        required=False,action="store_true")
+    parser.add_argument("--filename",  type=str,   help="Name of the measurement set for "+\
+                        "which weights want to be calculated", required=True,nargs="+")
     parser.add_argument("--dt",        type=float, help="Time interval, in minutes, for variance estimation. "+\
                         "Default of 0 means an estimate is made for every measurement.",required=False, default=0)
     parser.add_argument("--nt",        type=int,   help="Time interval, in timesteps, for variance estimation. "+\
-                        "Default of 0 means an estimate is made for every measurement. If both dt and nt provided, nt prevails."\
-                        ,required=False, default=0)
-    parser.add_argument("--dnu",       type=float, help="Frequency interval, in MHz, for variance estimation. Default of 0, "+\
-                        "which solves across all frequency in the dataset.",required=False,default=0)
-    parser.add_argument("--nchan",     type=int,   help="Frequency interval, in channels, for variance estimation. Default of 0, "+\
-                        "which solves across all frequency in the dataset.",required=False,default=0)
-    parser.add_argument("--weightcol", type=str,   help="Name of the weights column name you want to save the weights to. "+\
-                        "Default is QUAL_WEIGHT.",required=False,default="QUAL_WEIGHT")
-    parser.add_argument("--datacol",   type=str,   help="Name of the data column name you want to read to build residual visibilities. "+\
-                        "Default is DATA.",required=False,default="DATA")
-    parser.add_argument("--modelcol",  type=str,   help="Name of the weights column name you want to save the weights to. "+\
+                        "Default of 0 means an estimate is made for every measurement. "+\
+                        "If both dt and nt provided, nt prevails.",required=False, default=0)
+    parser.add_argument("--dnu",       type=float, help="Frequency interval, in MHz. Default "+\
+                        "solves across all frequency in the dataset.",required=False,default=0)
+    parser.add_argument("--nchan",     type=int,   help="Frequency interval, in channels. Default "+\
+                        "solves across all frequency in the dataset.",required=False,default=0)
+    parser.add_argument("--weightcol", type=str,   help="Name of the weights column name you want "+\
+                        "to save the weights to",required=False,default="QUAL_WEIGHT")
+    parser.add_argument("--datacol",   type=str,   help="Name of the data column name you want to "+\
+                        "read to build residual visibilities. Default is DATA.",required=False,default="DATA")
+    parser.add_argument("--modelcol",  type=str,   help="Name of the column you want to save the weights to. "+\
                         "Default is MODEL_DATA_CORR.",required=False,default="MODEL_DATA_CORR")
-    parser.add_argument("--uvcutkm",   type=float, nargs=2,default=[0,3000],required=False,help="uvcut used during calibration, in km.")
+    parser.add_argument("--uvcutkm",   type=float, nargs=2,default=[0,3000],required=False,\
+                        help="uvcut used during calibration, in km.")
     parser.add_argument("--DiagDir",type=str, default="",required=False,\
-                        help="Path to folder in which to save diagnostic plots. If not set, program will save in MS/NeReVarDiagnostics")
-    parser.add_argument("--basename",   type=str, default="NeReVar", required=False, help="Base name string to add to diagnostic file names")
-    parser.add_argument("--NormPerAnt",            help="Normalise gains per antenna to avoid suppressing long baselines", \
+                        help="Path to folder in which to save diagnostic plots. "+\
+                        "If not set, program will save in MS/NeReVarDiagnostics")
+    parser.add_argument("--basename", type=str, default="NeReVar", required=False,\
+                        help="Base name string to add to diagnostic file names")
+    parser.add_argument("--NormPerAnt", help="Normalise gains per antenna to avoid suppressing long baselines", \
                         required=False,action="store_true")
     parser.add_argument("--nodataproducts",   help="Use if you only want NeReVar to write weights to your MS file, without "+\
-                        "creating diagnostic plots nor saving coefficients array or weights column separately.",required=False,action="store_true")
-    parser.add_argument("--use_weight_spectrum", help="Flag to use WEIGHT_SPECTRUM for the estimation, and as the basis for correction.",\
+                        "creating diagnostic plots nor saving coefficients array or weights column separately.",\
+                        required=False,action="store_true")
+    parser.add_argument("--use_weight_spectrum", help="Flag to use WEIGHT_SPECTRUM as a prior.",\
                         required=False, action="store_true")
-    parser.add_argument("--dobins", help="Create bins and average across dt/dnu, rather than slide. Much faster, but less accurate variance tracking.",\
+    parser.add_argument("--slidingsolve", help="Instead of using bins and averaging across dt/dnu, slide"+\
+                                               "over all points. ~40x slower, but more accurate tracking.",\
                         required=False,action="store_true")
     args=parser.parse_args()
     return vars(args)
@@ -631,7 +638,7 @@ if __name__=="__main__":
     keepdiags      = bool(args["nodataproducts"] - 1)
     basename       = args["basename"]
     useWS          = bool(args["use_weight_spectrum"])
-    dobins         = args["dobins"]
+    slider         = args["slidingsolve"]
     
     # calculate weights for each measurement set
     for msname in mslist:
@@ -643,7 +650,7 @@ if __name__=="__main__":
                               datacolname=datacolname, weightscolname=weightscolname,\
                               verbose=verb, diagdir=diagdir,SaveDataProducts=keepdiags,\
                               basename=basename, useWS = useWS)
-        if dobins==False:
+        if slider==True:
             coefficients=covweights.FindWeights()
             covweights.SaveWeights()
         else:
