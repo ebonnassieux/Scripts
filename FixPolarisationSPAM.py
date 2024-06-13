@@ -14,9 +14,9 @@ def readArguments():
 
 def FixDataset(filename,verb):
     outfilename = filename.replace('RR','I')
-    os.sys('cp -r %s %s'%(filename,outfilename))
+    os.system('cp -r %s %s'%(filename,outfilename))
     
-    t=tables.table(outfilename+"/POLARIZATION", readonly=False,ack=verb)
+    t=table(outfilename+"/POLARIZATION", readonly=False,ack=verb)
     t.putcol("CORR_TYPE",np.array([[1]],dtype=np.int32))
     t.close()
 
@@ -27,5 +27,5 @@ if __name__=="__main__":
     mslist         = args["filename"]
     
     for ms in mslist:
-        FixDataset(ms,v)
+        FixDataset(ms,verb)
 
