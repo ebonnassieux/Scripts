@@ -179,8 +179,8 @@ class CovWeights:
             if dt!=0:
                 if self.verbose:
                     print("dt and nt are incompatible; nt is retained.")
-            self.ntimesteps   = ntimtesteps
-            self.dt           = ntimesteps * self.dumptime
+            self.ntimesteps   = nt
+            self.dt           = nt * self.dumptime
         else:
             self.ntimesteps   = dt / self.dumptime
             self.dt           = dt
@@ -192,8 +192,8 @@ class CovWeights:
         if nchan !=0:
             if self.verbose:
                 print("dnu and nchan are incompatible; nchan is retained.")
-            self.dchan        = dchan
-            self.dfreq        = dchan * self.chanwidth
+            self.dchan        = nchan
+            self.dfreq        = nchan * self.chanwidth
         else:
             self.dchan        = dfreq / self.chanwidth
             self.dfreq        = dfreq
@@ -448,6 +448,7 @@ class CovWeights:
             if self.verbose:
                 print("No colname given, so weights not saved in MS.")
         self.weights = w
+        np.save("nerevar_weights.npy",w)
 
     def SaveBinnedWeights(self):
         print("starting binned saving")
