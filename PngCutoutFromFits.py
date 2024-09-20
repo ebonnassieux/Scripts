@@ -22,6 +22,8 @@ import pyregion
 from scipy.special import erf
 from scipy.ndimage.filters import minimum_filter
 
+plt.rc('font', size=25) 
+
 def readArguments():
     # create parser
     parser=argparse.ArgumentParser(description="Make a png cutout from a FITS image.")
@@ -165,7 +167,7 @@ def MakeCutout(fitsfiles,overlay,RA,Dec,xDegrees=0.1,yDegrees=0.1,NSigmaVmax=10,
             levelmin=np.log10(minval)
             levels=10**(np.linspace(levelmin,levelmax,nlevels))
 #            print levels
-            temp.show_contour(hduOverlay,linewidths=1,cmap="autumn",origin="lower",levels=levels,alpha=0.4,overlap=True,slices=[0,ochan])
+            temp.show_contour(hduOverlay,linewidths=2,cmap="autumn",origin="lower",levels=levels,alpha=0.7,overlap=True,slices=[0,ochan])
         if histogram:
             rectsuperplot=pylab.axes([-0.19,0.79,0.515,0.18])
             rectsuperplot.tick_params(labelsize=0)
