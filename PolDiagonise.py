@@ -90,8 +90,10 @@ class MSpol:
         self.verbose          = verbose
         cwd                   = os.getcwd()+"/"
         if msname[-1]=="/":
-            self.msname       = cwd+msname[0:-1]
+            self.msname       = msname[0:-1]
         else:
+            self.msname       = msname
+        if self.msname[0]!="/":
             self.msname       = cwd+msname
         self.inbasis          = inbasis
         self.outbasis         = outbasis
@@ -150,7 +152,8 @@ class MSpol:
             # create output fle
             self.outfilename = self.msname.split(".MS")[0]+"."+str(self.outbasis)+".MS"
             os.system("cp -r %s %s"%(self.msname,self.outfilename))
-            self.outms       = table(self.outfilename,readonly=False)
+            self.outms       = table(self.outfilename,readonly=False,ack=self.verbose)
+            self.outpoltable = table(self.outfilename+"/POLARIZATION",readonly=False,ack=self.verbose)
             # define outpolnums
             self.outpolbase = ReturnPolBases(self.outbasis,len(self.corrnums))
             newpolnums = []
@@ -159,8 +162,7 @@ class MSpol:
             self.outpolnums = newpolnums
             # change header
             self.outcorrnums = np.array([self.outpolnums],dtype=np.int32)
-
-            self.poltable.putcol("CORR_TYPE",self.outcorrnums)
+            self.outpoltable.putcol("CORR_TYPE",self.outcorrnums)
             if self.verbose:
                 print("Edited metadata: %s is now in basis %s"%(self.outfilename,self.outbasis))
             if self.ncorrs==1:
@@ -232,6 +234,7 @@ class MSpol:
             self.poltable.close()
             self.ms.close()
             self.outms.close()
+            self.outpoltable.close()
         except:
             pass
 
