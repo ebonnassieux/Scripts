@@ -202,7 +202,7 @@ class CovWeights:
         self.ntimesteps       = int(int(self.ntimesteps   ) / 2. + (self.ntimesteps    % 2 > 0))
         self.dfreq            =         self.dfreq  / 2.
         self.dchan            = int(int(self.dchan) / 2. + (self.dchan % 2 > 0))
-        self.nbl              = np.where(self.tarray==self.tarray[0])[0].size
+        self.nbl              = int( (self.nAnt * (self.nAnt - 1))/2) #np.where(self.tarray==self.tarray[0])[0].size # todo WRONG WHEN IRREGULAR
         self.colnames         = self.ms.colnames()
         self.modelcolname     = modelcolname
         self.datacolname      = datacolname
@@ -224,7 +224,8 @@ class CovWeights:
         # get the shape of the data array
         self.nChan            = self.residualdata.shape[1]
         self.nPola            = self.residualdata.shape[2]
-        self.nt               = int(self.residualdata.shape[0]/self.nbl)
+        #self.nt               = int(self.residualdata.shape[0]/self.nbl) # todo WRONG WHEN IRREGULAR
+        self.nt               = len(self.tvals)
         self.flags            = self.ms.getcol("FLAG")
         # apply uvcut
         self.uvlen            = np.sqrt(self.u**2+self.v**2)
@@ -232,23 +233,35 @@ class CovWeights:
         self.flags[self.uvlen<self.uvcut[0]]=1
         # apply flags to data and weight_spectrum if requested
         self.residualdata[self.flags==1]=0
+        if self.residualdata.shape[0]!=self.nbl*self.nt:
+            if self.verbose: print("Irregular data array. Have to be slow :(")
+            self.irregular=True
+        else:
+            self.irregular=False
         if self.useWS:
             self.w_spectrum   = self.ms.getcol("WEIGHT_SPECTRUM")
             self.w_spectrum[self.flags==1]=0
-            self.w_spectrum   = self.w_spectrum.reshape((self.nt,self.nbl,self.nChan,self.nPola))
+            if self.irregular==False:
+                self.w_spectrum   = self.w_spectrum.reshape((self.nt,self.nbl,self.nChan,self.nPola))
         # reshape antennas and data columns for convenience [LOFAR only]
-        self.residualdata     = self.residualdata.reshape((self.nt,self.nbl,self.nChan,self.nPola))
-        self.flags            = self.flags.reshape((self.nt,self.nbl,self.nChan,self.nPola))
-        self.tarray           = self.tarray.reshape((self.nt,self.nbl))
-        self.A0               = self.A0.reshape((self.nt,self.nbl))
-        self.A1               = self.A1.reshape((self.nt,self.nbl))
+        if self.irregular==False:
+            self.residualdata     = self.residualdata.reshape((self.nt,self.nbl,self.nChan,self.nPola))
+            self.flags            = self.flags.reshape((self.nt,self.nbl,self.nChan,self.nPola))
+            self.tarray           = self.tarray.reshape((self.nt,self.nbl))
+            self.A0               = self.A0.reshape((self.nt,self.nbl))
+            self.A1               = self.A1.reshape((self.nt,self.nbl))
         self.ant1             = np.arange(self.nAnt)
         self.residuals        = np.zeros_like(self.residualdata,dtype=np.complex64)
         # remove crosspols
-        self.residuals[:,:,:,0]    = self.residualdata[:,:,:,0]
-        self.residuals[:,:,:,1]    = self.residualdata[:,:,:,3]
+        if self.irregular==False:
+            self.residuals[:,:,:,0]    = self.residualdata[:,:,:,0]
+            self.residuals[:,:,:,1]    = self.residualdata[:,:,:,3]
+        else:
+            self.residuals[:,:,0]      = self.residualdata[:,:,0]
+            self.residuals[:,:,1]      = self.residualdata[:,:,1]
         # build antenna coefficient array
         self.CoeffArray       = np.zeros((self.nAnt, self.nt, self.nChan))
+
 
     ### calculate the weights
     def FindWeights(self):
@@ -266,6 +279,7 @@ class CovWeights:
         for t_val in self.tvals:
             # mask for relevant times within dt
             tmask    = ( (t_val+self.dt  >= self.tvals) * (t_val-self.dt  < self.tvals))
+            print(tmask.shape,self.residuals.shape) # HERE # should use self.tarray
             Resids   = self.residuals[tmask]
             A0, A1   = self.A0[tmask], self.A1[tmask]
             # build weights for each antenna at time t_i            
@@ -346,7 +360,7 @@ class CovWeights:
         # remove 1 because the number of bins is the number of bin edges minus one
         self.nchanbins     = len(self.chanbins)-1
         # start calculating weights
-        for ibin in range(self.ntbins):
+        for ibin in range(self.ntbins):            
             # mask for relevant times within the bin
             tmask    = (self.tvals >= self.tbins[ibin]) * (self.tvals < self.tbins[ibin+1])
             Resids   = self.residuals[tmask]
@@ -405,7 +419,76 @@ class CovWeights:
             if self.verbose:
                 print("Save coefficient array as %s"%coeffFilename)
             np.save(coeffFilename,self.CoeffArray)
-                
+
+    ### calculate the weights for irregular data (not the same nbl for all timesteps
+    def FindIrregularWeights(self):
+        """
+        Function to calculate the antenna-based variance estimates
+        used as the baseline for NeReVar's quality-based weighting
+        scheme. This creates self.CoeffArray and writes it to the
+        diagnostic directory if the latter is requested. This version
+        is invoked when all timesteps do not contain the same number
+        of measurements: it is not optimised (yet).
+        """
+        if self.verbose:
+            print("Begin calculating antenna-based coefficients")
+        mask      = np.zeros_like(self.residuals).astype(bool)
+        chanrange = range(self.nChan)
+        t_i       = 0
+        for t_val in self.tvals:
+            tmask    =  ( (t_val+self.dt  >= self.tarray) * (t_val-self.dt  < self.tarray))
+            Resids   = self.residuals[tmask]
+            A0, A1   = self.A0[tmask], self.A1[tmask]
+            # build weights for each antenna at time t_i
+            if self.useWS:
+                tweightvals = self.w_spectrum[tmask]
+            for ant in self.ant1:
+                # build mask for set of vis w/ ant-ant_i and ant_i-ant baselines
+                antmask    = (A0==ant) + (A1==ant)
+                AntResids  = Resids[antmask]
+                if self.useWS:
+                    weightvals = tweightvals[antmask]
+                else:
+                    weightvals = np.abs(AntResids)
+                # before averaging operation, check if the data is not flagged to save time
+                for chan_i in chanrange:
+                    chanmin    = max(0,chan_i-self.dchan)
+                    vals       = AntResids[:,chanmin:(chan_i+self.dchan),:]
+                    weights    = weightvals[:,chanmin:(chan_i+self.dchan),:].astype(bool)
+                    if np.sum(weights) > 0:
+                        self.CoeffArray[ant, t_i, chan_i] = np.average( np.real( vals * vals.conj() ), \
+                                                                        weights = weights)
+                    else:
+                        # if flagged/absent, set var estimates to 0
+                        self.CoeffArray[ant, t_i, chan_i] = 0
+            if self.verbose:
+                PrintProgress(t_i,self.nt)
+            t_i = t_i + 1
+
+        for i in range(self.nAnt):
+            # flag any potential NaNs
+            self.CoeffArray[np.isnan(self.CoeffArray)]=np.inf
+            # if requested, flag per antenna
+            if self.antnorm:
+                for i in range(self.nAnt):
+                    antcoeffs = self.CoeffArray[i,:,:]
+                    # check that the full antenna is not flagged
+                    if np.sum(antcoeffs)!=0:
+                        self.CoeffArray[i,:,:] = np.average(antcoeffs, weights=antcoeffs.astype(bool))
+            else:
+                self.CoeffArray = self.CoeffArray /    \
+                    np.average( self.CoeffArray, weights = self.CoeffArray.astype(bool))
+        # create diagnostic directory if not yet created
+        if self.SaveDataProducts:
+            if not os.path.exists(self.DiagDir):
+                os.makedirs(self.DiagDir)
+            coeffFilename = self.DiagDir+"CoeffArray."+self.basename+".npy"
+            if self.verbose:
+                print("Save coefficient array as %s"%coeffFilename)
+            np.save(coeffFilename,self.CoeffArray)
+
+
+            
     ### save the weights in the designated measurement set column
     def SaveWeights(self):
         if self.verbose:
@@ -476,7 +559,55 @@ class CovWeights:
 
         if self.verbose:
             print("Binned weights saved")
+            
+    def SaveIrregularWeights(self):
+        if self.verbose:
+            print("Begin saving the data")
+        if self.weightscolname in self.ms.colnames():
+            if self.verbose:
+                print("%s column already present; will overwrite"%self.weightscolname)
+        else:
+            W=np.ones((self.residuals.shape[0],self.nChan,self.nPola))
+            desc=self.ms.getcoldesc("WEIGHT")
+            desc["name"]=self.weightscolname
+            desc['comment']=desc['comment'].replace(" ","_")
+            desc['ndim']=2
+            self.ms.addcols(desc)
+            self.ms.putcol(self.weightscolname,W)
+        # create weight array
+        w=np.zeros_like(self.ms.getcol("QUAL_WEIGHT"))
+        ant1=np.arange(self.nAnt)
+        if self.verbose:
+            print("Fill weights array")
+        for i,tval in enumerate(self.tvals):
+            # having the smallest array in the inner loop significantly accelerates
+            # the script...TODO optimise other reconstructions similarly.
+            tmask    = (tval == self.tarray)
+            ant1     = self.A0[tmask]
+            ant2     = self.A1[tmask]
+            maskedw  = np.copy(w[tmask])
+            for ant in self.ant1:
+                # build mask for set of vis w/ ant-ant_i and ant_i-ant bls
+                antmask = (ant1 == ant) + (ant2==ant)
+                #mask    = ( (self.A0==ant) + (self.A1==ant) ) * tmask
+                for k in range(self.nChan):
+                    maskedw[antmask,k,0]+=self.CoeffArray[ant,i,k]
+            w[tmask] = maskedw
+            if self.verbose:
+                PrintProgress(i,self.nt)
+        for k in range(self.nPola-1):
+            w[:,:,k] = w[:,:,0]
+        w[w!=0] = np.sqrt( 1. / w[w!=0] )
+        w = w / np.average(w,weights=w.astype(bool))
+        if self.weightscolname!=None:
+            self.ms.putcol(self.weightscolname,w)
+        else:
+            if self.verbose:
+                print("No colname given, so weights not saved in MS.")
+        self.weights = w
+        np.save("nerevar_weights.npy",w)
 
+            
         
     ### exit gracefully
     def close(self):
@@ -563,6 +694,83 @@ class CovWeights:
         fig.colorbar(im, cax=cbar_ax, aspect=40, extend='both', pad=0.02, fraction=0.047)
         plt.savefig(self.DiagDir+self.basename+"coeffs.png", dpi=300)
 
+    ### create diagnostic plots if requested, irregular version
+    def CreateDiagnosticPlotsIrregular(self):
+        # create the output directory
+        if not os.path.exists(self.DiagDir):
+            os.makedirs(self.DiagDir)
+        # create the coefficient directory
+        self.CoeffDict = {"Times"    : self.tvals,
+                          "ObsStart" : Time(self.t0/3600./24,format="mjd").iso,
+                          "ObsEnd"   : Time((self.t0+np.max(self.tvals))/3600./24,format="mjd").iso,
+                          "Freqs"    : self.chanfreqs,
+                          "Antennas" : self.antnames,
+                          "CoeffArr" : {},
+                          }
+        for idx, ant in enumerate(self.antnames):
+            self.CoeffDict["CoeffArr"][ant] = self.CoeffArray[idx, : :]
+        # apply flags for the diagnostics
+        flags    = self.flags==False# (self.flags.reshape((self.nbl*self.nt,self.nChan,self.nPola)).astype(bool) == False)
+        uvflags  = (np.sum(flags,axis=(1,2)).astype(bool))
+        uvdist   = np.sqrt(self.u[uvflags]**2 + self.v[uvflags]**2)/1000.
+        for i in range(self.nChan):
+            pylab.scatter(uvdist,self.weights[uvflags,i,0],s=0.1)
+        pylab.xlabel(r"$uv$-distance [km]")
+        pylab.ylabel(r"Weight value")
+        pylab.savefig(self.DiagDir+self.basename+"WeightsUVWave")
+
+        nAnts = len(self.CoeffDict['Antennas'])
+        nColumns = int(np.floor(np.sqrt(nAnts)))
+        nRows = int(np.ceil(nAnts/nColumns))
+
+        t_max = (np.max(self.CoeffDict['Times'])-np.min(self.CoeffDict['Times']))/3600
+        chan_max = len(self.CoeffDict['Freqs'])
+
+        #Start plot                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+        fig = plt.figure(figsize=(15, 10))
+        gs = gridspec.GridSpec(nRows, nColumns)
+        gs.update(wspace=0, hspace=0, right=0.945, left=0.03, top=0.99, bottom=0.025)
+
+        for idx_y in range(nRows):
+            for idx_x in range(nColumns):
+                ant_idx = nColumns*idx_y + idx_x
+                ax = fig.add_subplot(gs[idx_y,idx_x])
+
+                ax.set_xlim((0, t_max))
+                ax.set_ylim((0, chan_max))
+
+                if idx_x > 0:
+                    ax.yaxis.set_ticklabels([])
+                else:
+                    ticklabels=ax.yaxis.get_ticklabels()
+                    if ticklabels[-1]._y > 0.9*chan_max and idx_y != 0:
+                        ax.yaxis.set_ticklabels(ticklabels[:-1])
+                if idx_y < nRows-1:
+                    ax.xaxis.set_ticklabels([])
+                else:
+                    ticklabels=ax.xaxis.get_ticklabels()
+                    if ticklabels[-1]._x > 0.9*t_max and idx_x != nColumns-1:
+                        ax.xaxis.set_ticklabels(ticklabels[:-1])
+                ax.tick_params(axis='y',which='major',direction='in',left='on',right='on')
+                ax.tick_params(axis='x',which='major',direction='in',bottom='on',top='on')
+
+
+                #Check if we're not overshooting                                                                                                                                                                                                                                                                                                                                                                                                                           
+                if ant_idx >= nAnts:
+                    break
+
+                ant_name = self.CoeffDict['Antennas'][ant_idx]
+
+                coeffs = self.CoeffDict['CoeffArr'][ant_name].T
+                coeffs[coeffs==0] = np.nan
+                im = ax.imshow(coeffs, origin='lower', aspect='auto', interpolation='none', extent=(0, t_max, 0, chan_max), vmin=0.24, vmax=2.30)
+                ax.set_title(ant_name, c='w', fontsize=8, y=1.0, pad=-14, path_effects=[pe.withStroke(linewidth=1, foreground="black")])
+
+        cbar_ax = fig.add_axes([0.95, 0.025, 0.02, 0.965])
+        fig.colorbar(im, cax=cbar_ax, aspect=40, extend='both', pad=0.02, fraction=0.047)
+        plt.savefig(self.DiagDir+self.basename+"coeffs.png", dpi=300)
+
+        
         
 ### auxiliary functions ###
 ### printer for when needed
@@ -591,7 +799,7 @@ def readArguments():
     parser.add_argument("--nchan",     type=int,   help="Frequency interval, in channels. Default "+\
                         "solves across all frequency in the dataset.",required=False,default=0)
     parser.add_argument("--weightcol", type=str,   help="Name of the weights column name you want "+\
-                        "to save the weights to",required=False,default="QUAL_WEIGHT")
+                        "to save the weights to. Default is QUAL_WEIGHT",required=False,default="QUAL_WEIGHT")
     parser.add_argument("--datacol",   type=str,   help="Name of the data column name you want to "+\
                         "read to build residual visibilities. Default is DATA.",required=False,default="DATA")
     parser.add_argument("--modelcol",  type=str,   help="Name of the column you want to save the weights to. "+\
@@ -651,14 +859,21 @@ if __name__=="__main__":
                               datacolname=datacolname, weightscolname=weightscolname,\
                               verbose=verb, diagdir=diagdir,SaveDataProducts=keepdiags,\
                               basename=basename, useWS = useWS)
-        if slider==True:
-            coefficients=covweights.FindWeights()
-            covweights.SaveWeights()
+        # if data is irregular, force specific sliding solve for now.
+        if covweights.irregular:
+            coefficients=covweights.FindIrregularWeights()
+            covweights.SaveIrregularWeights()
+            if keepdiags:
+                covweights.CreateDiagnosticPlotsIrregular()
         else:
-            coefficients=covweights.FindBinnedWeights()
-            covweights.SaveBinnedWeights()
-        if keepdiags:
-            covweights.CreateDiagnosticPlots()
+            if slider==True:
+                coefficients=covweights.FindWeights()
+                covweights.SaveWeights()
+            else:
+                coefficients=covweights.FindBinnedWeights()
+                covweights.SaveBinnedWeights()
+            if keepdiags:
+                covweights.CreateDiagnosticPlots()
         covweights.close()
         if verb:
             print("Total runtime: %f min"%((time.time()-start_time)/60.))
