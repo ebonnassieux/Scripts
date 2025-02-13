@@ -508,21 +508,44 @@ class CovWeights:
         ant1=np.arange(self.nAnt)
         if self.verbose:
             print("Fill weights array")
-        for i in range(self.nt):
-            A0ind = self.A0[i,:]
-            A1ind = self.A1[i,:]
-            for j in range(self.nbl):
+        #for i in range(self.nt):
+        #    A0ind = self.A0[i,:]
+        #    A1ind = self.A1[i,:]
+        #    for j in range(self.nbl):
+        #        for k in range(self.nChan):
+        #            var1=self.CoeffArray[A0ind[j],i,k]
+        #            var2=self.CoeffArray[A1ind[j],i,k]
+        #            if var1 and var2 != 0:
+        #                weights = np.sqrt( 1. / ( var1 + var2 ))
+        #            else:
+        #                weights=0
+        #            for k1 in range(self.nPola):
+        #                w[i,j,k,k1] = weights
+        #    if self.verbose:
+        #        PrintProgress(i,self.nt)
+
+        for i,tval in enumerate(self.tvals):
+            # having the smallest array in the inner loop significantly accelerate
+            # the script...TODO optimise other reconstructions similarly.
+            tmask    = (tval == self.tarray)
+            ant1     = self.A0[tmask]
+            ant2     = self.A1[tmask]
+            maskedw  = np.copy(w[tmask])
+            for ant in self.ant1:
+                # build mask for set of vis w/ ant-ant_i and ant_i-ant bls
+                antmask = (ant1 == ant) + (ant2==ant)
+                #mask    = ( (self.A0==ant) + (self.A1==ant) ) * tmask
                 for k in range(self.nChan):
-                    var1=self.CoeffArray[A0ind[j],i,k]
-                    var2=self.CoeffArray[A1ind[j],i,k]
-                    if var1 and var2 != 0:
-                        weights = np.sqrt( 1. / ( var1 + var2 ))
-                    else:
-                        weights=0
-                    for k1 in range(self.nPola):
-                        w[i,j,k,k1] = weights
+                    maskedw[antmask,k,0]+=self.CoeffArray[ant,i,k]
+            w[tmask] = maskedw
             if self.verbose:
                 PrintProgress(i,self.nt)
+        for k in range(self.nPola-1):
+            w[:,:,k] = w[:,:,0]
+        w[w!=0] = np.sqrt( 1. / w[w!=0] )
+
+
+                
         w=w.reshape(self.nt*self.nbl,self.nChan,self.nPola)        
         w = w / np.average(w,weights=w.astype(bool))
         if self.weightscolname!=None:
