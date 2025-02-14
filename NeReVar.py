@@ -541,7 +541,7 @@ class CovWeights:
             if self.verbose:
                 PrintProgress(i,self.nt)
         for k in range(self.nPola-1):
-            w[:,:,k] = w[:,:,0]
+            w[:,:,k+1] = w[:,:,0]
         w[w!=0] = np.sqrt( 1. / w[w!=0] )
 
 
