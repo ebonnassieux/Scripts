@@ -544,11 +544,12 @@ class CovWeights:
             w[tmask] = maskedw
             if self.verbose:
                 PrintProgress(i,self.nt)
+        print(w)
+        tempw=w[:,:,0]
         for k in range(self.nPola-1):
-            w[:,:,k+1] = w[:,:,0]
+            w[:,:,k+1] = tempw
         w[w!=0] = np.sqrt( 1. / w[w!=0] )
-
-
+        print(w)
                 
         w=w.reshape(self.nt*self.nbl,self.nChan,self.nPola)        
         w = w / np.average(w,weights=w.astype(bool))
