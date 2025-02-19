@@ -528,6 +528,7 @@ class CovWeights:
         #    if self.verbose:
         #        PrintProgress(i,self.nt)
 
+        
         for i,tval in enumerate(self.tvals):
             # having the smallest array in the inner loop significantly accelerate
             # the script...TODO optimise other reconstructions similarly.
@@ -544,13 +545,14 @@ class CovWeights:
             w[tmask] = maskedw
             if self.verbose:
                 PrintProgress(i,self.nt)
-        print(w)
-        tempw=w[:,:,0]
-        for k in range(self.nPola-1):
-            w[:,:,k+1] = tempw
+
+        w=np.load("w.npy")
+        for k in range(1,self.nPola):
+            print(k)
+            w[:,:,:,k] = w[:,:,:,0]
         w[w!=0] = np.sqrt( 1. / w[w!=0] )
-        print(w)
-                
+
+        
         w=w.reshape(self.nt*self.nbl,self.nChan,self.nPola)        
         w = w / np.average(w,weights=w.astype(bool))
         if self.weightscolname!=None:
@@ -895,7 +897,8 @@ if __name__=="__main__":
                 covweights.CreateDiagnosticPlotsIrregular()
         else:
             if slider==True:
-                coefficients=covweights.FindWeights()
+                #coefficients=covweights.FindWeights()
+                covweights.CoeffArray = np.load("OJ287_calibrated-avg-p6.nerevar.ms/NeReVarDiagnostics/CoeffArray.NeReVar.npy")
                 covweights.SaveWeights()
             else:
                 coefficients=covweights.FindBinnedWeights()
