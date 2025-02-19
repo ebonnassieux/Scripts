@@ -753,7 +753,7 @@ class CovWeights:
         t_max = (np.max(self.CoeffDict['Times'])-np.min(self.CoeffDict['Times']))/3600
         chan_max = len(self.CoeffDict['Freqs'])
 
-        #Start plot                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+        #Start plot
         fig = plt.figure(figsize=(15, 10))
         gs = gridspec.GridSpec(nRows, nColumns)
         gs.update(wspace=0, hspace=0, right=0.945, left=0.03, top=0.99, bottom=0.025)
@@ -782,7 +782,7 @@ class CovWeights:
                 ax.tick_params(axis='x',which='major',direction='in',bottom='on',top='on')
 
 
-                #Check if we're not overshooting                                                                                                                                                                                                                                                                                                                                                                                                                           
+                #Check if we're not overshooting
                 if ant_idx >= nAnts:
                     break
 
