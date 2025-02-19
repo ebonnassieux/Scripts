@@ -254,8 +254,12 @@ class CovWeights:
         self.residuals        = np.zeros_like(self.residualdata,dtype=np.complex64)
         # remove crosspols
         if self.irregular==False:
-            self.residuals[:,:,:,0]    = self.residualdata[:,:,:,0]
-            self.residuals[:,:,:,1]    = self.residualdata[:,:,:,3]
+            if self.nPola==4:
+                self.residuals[:,:,:,0]    = self.residualdata[:,:,:,0]
+                self.residuals[:,:,:,1]    = self.residualdata[:,:,:,3]
+            elif self.nPola==2:
+                self.residuals[:,:,:,0]    = self.residualdata[:,:,:,0]
+                self.residuals[:,:,:,1]    = self.residualdata[:,:,:,1]
         else:
             self.residuals[:,:,0]      = self.residualdata[:,:,0]
             self.residuals[:,:,1]      = self.residualdata[:,:,1]
@@ -279,7 +283,7 @@ class CovWeights:
         for t_val in self.tvals:
             # mask for relevant times within dt
             tmask    = ( (t_val+self.dt  >= self.tvals) * (t_val-self.dt  < self.tvals))
-            print(tmask.shape,self.residuals.shape) # HERE # should use self.tarray
+            #print(tmask.shape,self.residuals.shape) # HERE # should use self.tarray
             Resids   = self.residuals[tmask]
             A0, A1   = self.A0[tmask], self.A1[tmask]
             # build weights for each antenna at time t_i            
