@@ -12,10 +12,8 @@ import time
 import argparse
 
 ### this script gets cutouts from DR3 for the CARMENES coordinates and places them at the request outdir
-
-#carmenesfilename  = "/home/ebonnassieux/Project_CARMENES_LoTSS_CrossMatch/DR3_CrossMatch/StarTable-CARMENES_alltargets.csv"
-#carmenesfilename  = "/home/ebonnassieux/Project_CARMENES_LoTSS_CrossMatch/carmencita.107.csv"
-#DR3cutoutdir      = "/home/ebonnassieux/Project_CARMENES_LoTSS_CrossMatch/DR3_CrossMatch/DR3_CutOuts/"
+# example call:
+# python3 GetCutouts_DR3.py -v --catalog /home/ebonnassieux/Project_CARMENES_LoTSS_CrossMatch/carmencita.107.csv --cutoutdir Cutouts_DR3
 
 class GetCutouts:
     """
@@ -25,16 +23,28 @@ class GetCutouts:
 
     Attributes:
     -------------
-    catalog   : string
+    catalog    : string
         value pointing to the input catalog
-    outdir    : string 
+    outdir     : string 
         value for the directory to write the output files
-    size      : float
+    size       : float
         size of the cutout fields in arcmin
-    obstime   : str
+    obstime    : str
         ISO time of observation for proper motion correction
-    decfilter : float
+    decfilter  : float
         minimum declination to use, in degrees.
+    namekey    : str
+        Key for the column containing source names in your catalog.
+    RAkey      : str
+        Key for the column containing RA in your catalog.
+    Deckey     : str
+        Key for the column containing Dec in your catalog.
+    RA_pm_key  : str
+        Key for the column containing RA proper motion in your catalog.
+    Dec_pm_key : str
+        Key for the column containing RA proper motion in your catalog.
+    distkey    : str
+        Key for the column containing distances in pc in your catalog.
     verbose          : bool
         flag to print out stdout information. Default: True     
     """
@@ -156,8 +166,7 @@ class GetCutouts:
                     r.close()
                     if self.verbose:
                         print("Written cutout to %s"%outfile)
-            stop
-
+                        
     def fix_headers(self):
     # header is busted: fix it
         for filename in os.listdir(self.cutoutsdir):
@@ -206,8 +215,8 @@ if __name__=="__main__":
     # read arguments
     args           = readArguments()
     verb           = args["verbose"]
-    catalog        = args["catalog"] # /home/ebonnassieux/Project_CARMENES_LoTSS_CrossMatch/carmencita.107.csv
-    cutoutsdir     = args["cutoutdir"] # /home/ebonnassieux/Project_CARMENES_LoTSS_CrossMatch/DR3_CrossMatch/DR3_CutOuts/
+    catalog        = args["catalog"]
+    cutoutsdir     = args["cutoutdir"]
     size           = args["size"]
     obstime        = args["obstime"]
     decfilter      = args["decfilter"]
@@ -223,7 +232,7 @@ if __name__=="__main__":
         os.mkdir(cutoutsdir)
     cutouts = GetCutouts(catalog,cutoutsdir,size,obstime,decfilter,namekey,rakey,deckey,ra_pm_key,dec_pm_key,dist_key,verbose=verb)
     cutouts.SetLoTSSReferenceTime()
-    #cutouts.PrintCatHeader()
+    #cutouts.PrintCatHeader() # debug option
     cutouts.download()
     cutouts.UpdatePositions()
-    #cutouts.fix_headers()
+    cutouts.fix_headers()
