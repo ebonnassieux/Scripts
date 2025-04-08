@@ -135,7 +135,11 @@ class GetCutouts:
                 
     def download(self):
         # read surveys login details
-        f=open("/home/ebonnassieux/.lotssrc")
+        try:
+            f=open("/home/ebonnassieux/.lotssrc")
+        except FileNotFoundError:
+            print("To use the DR3 catalog, put the login and password in a file in your home called .lotssrc")
+    
         login=f.readline().strip("\n")
         passwd=f.readline().strip("\n")
         # start downloading
