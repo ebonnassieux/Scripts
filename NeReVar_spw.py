@@ -239,8 +239,8 @@ class CovWeights:
             self.residualdata = self.ms.getcol("RESIDUAL_DATA")
         else:
             if self.verbose:
-                print("Model, data colnames not present; RESIDUAL_DATA column not in measurement set: reading CORRECTED_DATA")
-            self.residualdata = self.ms.getcol("CORRECTED_DATA")
+                print("Model, data colnames not present; RESIDUAL_DATA column not in measurement set: reading DATA")
+            self.residualdata = self.ms.getcol("DATA")
         # check for WEIGHT_SPECTRUM request
         self.useWS            = useWS
         # get the shape of the data array
@@ -653,33 +653,35 @@ class CovWeights:
         ant1=np.arange(self.nAnt)
         if self.verbose:
             print("Fill weights array")
-        for i,tval in enumerate(self.tvals):
-            # having the smallest array in the inner loop significantly accelerates
-            # the script...TODO optimise other reconstructions similarly.
-            tmask    = (tval == self.tarray)
-            ant1     = self.A0[tmask]
-            ant2     = self.A1[tmask]
-            maskedw  = np.copy(w[tmask])
-            for ant in self.ant1:
-                # build mask for set of vis w/ ant-ant_i and ant_i-ant bls
-                antmask = (ant1 == ant) + (ant2==ant)
-                #mask    = ( (self.A0==ant) + (self.A1==ant) ) * tmask
-                for k in range(self.nChan):
-                    maskedw[antmask,k,0]+=self.CoeffArray[ant,i,k]
-            w[tmask] = maskedw
-            if self.verbose:
-                PrintProgress(i,self.nt)
-        for k in range(self.nPola-1):
-            w[:,:,k] = w[:,:,0]
-        w[w!=0] = np.sqrt( 1. / w[w!=0] )
-        w = w / np.average(w,weights=w.astype(bool))
-        if self.weightscolname!=None:
-            self.ms.putcol(self.weightscolname,w)
-        else:
-            if self.verbose:
-                print("No colname given, so weights not saved in MS.")
-        self.weights = w
-        np.save("nerevar_weights.npy",w)
+        for ispw, spw in enumerate(self.spwlist):
+            for i,tval in enumerate(self.tvals):
+                # having the smallest array in the inner loop significantly accelerates
+                # the script...TODO optimise other reconstructions similarly.
+                spwmask  = self.spwcol==spw
+                tmask    = (tval == self.tarray) * spwmask
+                ant1     = self.A0[tmask]
+                ant2     = self.A1[tmask]
+                maskedw  = np.copy(w[tmask])
+                for ant in self.ant1:
+                    # build mask for set of vis w/ ant-ant_i and ant_i-ant bls
+                    antmask = (ant1 == ant) + (ant2==ant)
+                    #mask    = ( (self.A0==ant) + (self.A1==ant) ) * tmask
+                    for k in range(self.nChan):
+                        maskedw[antmask,k,0]+=self.CoeffArray[ispw,ant,i,k]
+                    w[tmask] = maskedw
+                if self.verbose:
+                    PrintProgress(i,self.nt)
+            for k in range(self.nPola-1):
+                w[:,:,k] = w[:,:,0]
+            w[w!=0] = np.sqrt( 1. / w[w!=0] )
+            w = w / np.average(w,weights=w.astype(bool))
+            if self.weightscolname!=None:
+                self.ms.putcol(self.weightscolname,w)
+            else:
+                if self.verbose:
+                    print("No colname given, so weights not saved in MS.")
+            self.weights = w
+            np.save("nerevar_weights.npy",w)
 
             
         
@@ -782,16 +784,18 @@ class CovWeights:
                           "CoeffArr" : {},
                           }
         for idx, ant in enumerate(self.antnames):
-            self.CoeffDict["CoeffArr"][ant] = self.CoeffArray[idx, : :]
+            self.CoeffDict["CoeffArr"][ant] = self.CoeffArray[:,idx, : :]
         # apply flags for the diagnostics
-        flags    = self.flags==False# (self.flags.reshape((self.nbl*self.nt,self.nChan,self.nPola)).astype(bool) == False)
+        flags    = self.flags==False
+        #flags    = (self.flags.reshape((self.nbl*self.nt,self.nChan,self.nPola)).astype(bool) == False)
         uvflags  = (np.sum(flags,axis=(1,2)).astype(bool))
         uvdist   = np.sqrt(self.u[uvflags]**2 + self.v[uvflags]**2)/1000.
-        for i in range(self.nChan):
-            pylab.scatter(uvdist,self.weights[uvflags,i,0],s=0.1)
-        pylab.xlabel(r"$uv$-distance [km]")
-        pylab.ylabel(r"Weight value")
-        pylab.savefig(self.DiagDir+self.basename+"WeightsUVWave")
+        # add the below back once per-spw per-ant plots are validated
+#        for i in range(self.nChan):
+#            pylab.scatter(uvdist,self.weights[uvflags,i,0],s=0.1)
+#        pylab.xlabel(r"$uv$-distance [km]")
+#        pylab.ylabel(r"Weight value")
+#        pylab.savefig(self.DiagDir+self.basename+"WeightsUVWave")
 
         nAnts = len(self.CoeffDict['Antennas'])
         nColumns = int(np.floor(np.sqrt(nAnts)))
@@ -800,49 +804,57 @@ class CovWeights:
         t_max = (np.max(self.CoeffDict['Times'])-np.min(self.CoeffDict['Times']))/3600
         chan_max = len(self.CoeffDict['Freqs'])
 
-        #Start plot                                                                                                                                                                                                                                                                                                                                                                                                                                                        
-        fig = plt.figure(figsize=(15, 10))
-        gs = gridspec.GridSpec(nRows, nColumns)
-        gs.update(wspace=0, hspace=0, right=0.945, left=0.03, top=0.99, bottom=0.025)
+        #Start plot per spw
+        for ispw, spw in enumerate(self.spwlist):
+            fig = plt.figure(figsize=(15, 10))
+            gs = gridspec.GridSpec(nRows, nColumns)
+            gs.update(wspace=0, hspace=0, right=0.945, left=0.03, top=0.99, bottom=0.025)
 
-        for idx_y in range(nRows):
-            for idx_x in range(nColumns):
-                ant_idx = nColumns*idx_y + idx_x
-                ax = fig.add_subplot(gs[idx_y,idx_x])
+            for idx_y in range(nRows):
+                for idx_x in range(nColumns):
+                    ant_idx = nColumns*idx_y + idx_x
+                    ax = fig.add_subplot(gs[idx_y,idx_x])
+                    
+                    ax.set_xlim((0, t_max))
+                    ax.set_ylim((0, chan_max))
+                    
+                    if idx_x > 0:
+                        ax.yaxis.set_ticklabels([])
+                    else:
+                        ticklabels=ax.yaxis.get_ticklabels()
+                        if ticklabels[-1]._y > 0.9*chan_max and idx_y != 0:
+                            ax.yaxis.set_ticklabels(ticklabels[:-1])
+                    if idx_y < nRows-1:
+                        ax.xaxis.set_ticklabels([])
+                    else:
+                        ticklabels=ax.xaxis.get_ticklabels()
+                        if ticklabels[-1]._x > 0.9*t_max and idx_x != nColumns-1:
+                            ax.xaxis.set_ticklabels(ticklabels[:-1])
+                    ax.tick_params(axis='y',which='major',direction='in',left='on',right='on')
+                    ax.tick_params(axis='x',which='major',direction='in',bottom='on',top='on')
 
-                ax.set_xlim((0, t_max))
-                ax.set_ylim((0, chan_max))
 
-                if idx_x > 0:
-                    ax.yaxis.set_ticklabels([])
-                else:
-                    ticklabels=ax.yaxis.get_ticklabels()
-                    if ticklabels[-1]._y > 0.9*chan_max and idx_y != 0:
-                        ax.yaxis.set_ticklabels(ticklabels[:-1])
-                if idx_y < nRows-1:
-                    ax.xaxis.set_ticklabels([])
-                else:
-                    ticklabels=ax.xaxis.get_ticklabels()
-                    if ticklabels[-1]._x > 0.9*t_max and idx_x != nColumns-1:
-                        ax.xaxis.set_ticklabels(ticklabels[:-1])
-                ax.tick_params(axis='y',which='major',direction='in',left='on',right='on')
-                ax.tick_params(axis='x',which='major',direction='in',bottom='on',top='on')
+                    #Check if we're not overshooting
+                    if ant_idx >= nAnts:
+                        break
 
+                    ant_name = self.CoeffDict['Antennas'][ant_idx]
 
-                #Check if we're not overshooting                                                                                                                                                                                                                                                                                                                                                                                                                           
-                if ant_idx >= nAnts:
-                    break
+#                    print(self.CoeffDict['CoeffArr'][ant_name].shape)
+#                    print(self.CoeffDict['CoeffArr'][ant_name][ispw,:,:].T)
+#                    stop
 
-                ant_name = self.CoeffDict['Antennas'][ant_idx]
+                    
+                    coeffs = self.CoeffDict['CoeffArr'][ant_name][ispw,:,:].T
+                    coeffs[coeffs==0] = np.nan
+                    im = ax.imshow(coeffs, origin='lower', aspect='auto', interpolation='none', extent=(0, t_max, 0, chan_max), vmin=0.24, vmax=2.30)
+                    ax.set_title(ant_name, c='w', fontsize=8, y=1.0, pad=-14, path_effects=[pe.withStroke(linewidth=1, foreground="black")])
 
-                coeffs = self.CoeffDict['CoeffArr'][ant_name].T
-                coeffs[coeffs==0] = np.nan
-                im = ax.imshow(coeffs, origin='lower', aspect='auto', interpolation='none', extent=(0, t_max, 0, chan_max), vmin=0.24, vmax=2.30)
-                ax.set_title(ant_name, c='w', fontsize=8, y=1.0, pad=-14, path_effects=[pe.withStroke(linewidth=1, foreground="black")])
-
-        cbar_ax = fig.add_axes([0.95, 0.025, 0.02, 0.965])
-        fig.colorbar(im, cax=cbar_ax, aspect=40, extend='both', pad=0.02, fraction=0.047)
-        plt.savefig(self.DiagDir+self.basename+"coeffs.png", dpi=300)
+            cbar_ax = fig.add_axes([0.95, 0.025, 0.02, 0.965])
+            fig.colorbar(im, cax=cbar_ax, aspect=40, extend='both', pad=0.02, fraction=0.047)
+            plt.savefig(self.DiagDir+self.basename+"_"+"SPW%i"%ispw+"_coeffs.png", dpi=300)
+            if self.verbose:
+                print("Saved %s"%self.DiagDir+self.basename+"_"+"SPW%i"%ispw+"_coeffs.png")
 
         
         
@@ -942,8 +954,10 @@ if __name__=="__main__":
                               verbose=verb, diagdir=diagdir,SaveDataProducts=keepdiags,\
                               basename=basename, useWS = useWS, spw=spw, spwnorm=NormPerSPW)
         # if data is irregular, force specific sliding solve for now.
+        covweights.irregular=True
         if covweights.irregular:
-            coefficients=covweights.FindIrregularWeights()
+            #coefficients=covweights.FindIrregularWeights()
+            covweights.CoeffArray=np.load("/home/ebonnassieux/Project_NeReVarJavier/15A-240.sb30780817_J0834+5534_J0834+5534.ms/NeReVarDiagnostics/CoeffArray.NeReVar.npy")
             covweights.SaveIrregularWeights()
             if keepdiags:
                 covweights.CreateDiagnosticPlotsIrregular()
