@@ -956,8 +956,7 @@ if __name__=="__main__":
         # if data is irregular, force specific sliding solve for now.
         covweights.irregular=True
         if covweights.irregular:
-            #coefficients=covweights.FindIrregularWeights()
-            covweights.CoeffArray=np.load("/home/ebonnassieux/Project_NeReVarJavier/15A-240.sb30780817_J0834+5534_J0834+5534.ms/NeReVarDiagnostics/CoeffArray.NeReVar.npy")
+            coefficients=covweights.FindIrregularWeights()
             covweights.SaveIrregularWeights()
             if keepdiags:
                 covweights.CreateDiagnosticPlotsIrregular()
