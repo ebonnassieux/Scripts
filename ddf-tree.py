@@ -1,21 +1,17 @@
-# prefix components:
-space =  '    '
-branch = '│   '
-# pointers:
-tee =    '├── '
-last =   '└── '
+
+import numpy as np
 
 ### build up branch dict
 ddf_dict={}
-ddf_dict["codebase"] = "DDFacet codebase"
-ddf_dict["branch"]   = "MassiveMerge_PR_SSD3_FullParallel_OverlapIslands_ModelImage"
+ddf_dict["Codebase"] = "DDFacet"
+ddf_dict["Branch"]   = "MassiveMerge_PR_SSD3_FullParallel_OverlapIslands_ModelImage"
 
 ddf_dict["DDFacet"]={"comment":"This is the main DDFacet repository."}
 
-ddf_dict["DDFacet"]["Array"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Array"]={"comment":"describe array"}
 ddf_dict["DDFacet"]["Array"]["ModLinAlg.py"]={"comment":"describe"}
 ddf_dict["DDFacet"]["Array"]["ModSharedArray.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Array"]["NpParallel.py"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Array"]["NpParallel.py"]={"comment":"describe npparallel"}
 ddf_dict["DDFacet"]["Array"]["NpShared.py"]={"comment":"describe"}
 ddf_dict["DDFacet"]["Array"]["PrintRecArray.py"]={"comment":"describe"}
 ddf_dict["DDFacet"]["Array"][" __init__.py"]={"comment":"describe"}
@@ -43,7 +39,7 @@ ddf_dict["DDFacet"]["Data"]["PointingProvider.py"]={"comment":"describe"}
 ddf_dict["DDFacet"]["Data"]["__init__.py"]={"comment":"describe"}
 ddf_dict["DDFacet"]["Data"]["sidereal.py"]={"comment":"describe"}
 
-ddf_dict["DDFacet"]["Gridder"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Gridder"]={"comment":"describe gridder"}
 ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]={"comment":"describe"}
 ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["CMakeLists.txt"]={"comment":"describe"}
 ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["Constants.h"]={"comment":"describe"}
@@ -356,7 +352,7 @@ ddf_dict["DDFacet"]["plot_clean_logs.py"]={"comment":"describe"}
 ddf_dict["DDFacet"]["report_version.py"]={"comment":"describe"}
 
 
-ddf_dict["SkyModel"]={"comment":"describe"}
+ddf_dict["SkyModel"]={"comment":"This repository contains the sky model codebase"}
 ddf_dict["SkyModel"]["Array"]={"comment":"describe"}
 ddf_dict["SkyModel"]["Array"]["RecArrayOps.py"]={"comment":"describe"}
 ddf_dict["SkyModel"]["Array"]["__init__.py"]={"comment":"describe"}
@@ -446,31 +442,151 @@ ddf_dict["docker.2204"]={"comment":"describe"}
 ddf_dict["migratenumpy.sh"]={"comment":"describe"}
 ddf_dict["pyproject.toml"]={"comment":"describe"}
 
-### build up branch strings
-for key in ddf_dict:
-    if key=="codebase":
-        print("################################################################################")
-        print(ddf_dict[key])
-    elif key=="branch":
-        print(ddf_dict[key])
-        print("################################################################################")
-    else:        
-        if key!="comment":
-            print(tee+key)
-            print(branch+ddf_dict[key]["comment"])
-            this_dict=ddf_dict[key]
-            for key1 in ddf_dict[key].keys():
-                if key1!="comment":
-                    print(branch+tee+key1)
-                    print(branch+branch+this_dict[key1]["comment"])
-                    this_dict1=this_dict[key1]
-                    for key2 in this_dict1.keys():
-                        if key2!="comment":
-                            print(branch+branch+tee+key2)
-                            print(branch+branch+branch+this_dict1[key2]["comment"])
-                            this_dict2=this_dict1[key2]
-                            for key3 in this_dict2.keys():
-                                if key3!="comment":
-                                    print(branch+branch+branch+tee+key2)
-                                    print(branch+branch+branch+branch+this_dict1[key2]["comment"])
+def DicoDepth(dico):
+    if isinstance(dico, dict):
+        return 1 + (max(map(DicoDepth, dico.values())) if dico else 0)
+    return 0
 
+
+def PrintDictStructure(dico,exclude=["comment"],verbose=["comment"],depth=0,named_columns=[]):
+    # prefix components:
+    space  =  '    '
+    branch = '│   '
+    # pointers:
+    tee    = '├── '
+    last   = '└── '
+    split  = '┌──'
+    cont   = '───'
+    # box components
+    # find longest string in list to define column lengths
+    maxstrlen = 0
+    # make the head
+    header=[]
+    for key in ["Codebase","Branch"]:
+        thisstrlen=len(tee+'{0:<8}'.format(key)+" : "+dico[key])        
+        if thisstrlen>maxstrlen:
+            maxstrlen=thisstrlen
+    # print header here
+    header.append("┏"+"━"*(maxstrlen)+"┓")
+    header.append("┃"+" "*(maxstrlen)+"┃")
+    for key in ["Codebase","Branch"]:
+        thisstr=('{0:<%i}'%(maxstrlen-4)).format('{0:<8}'.format(key)+" : "+dico[key])
+        header.append("┣━━ "+thisstr+" ┃")
+    header.append("┣━━ Depth    : %2i"%depth+" "*(maxstrlen-16)+"┃")
+    header.append("┃"+" "*(maxstrlen)+"┃")
+    header.append("┡"+"━"*(maxstrlen)+"┛")
+    for line in header:
+        print(line)
+    maxstrlen=0
+    # start making multicolumn plot
+    namedcols= [[] for _ in range(len(named_columns))]
+    icol=0
+    lastcol=[]
+
+    for key in dico.keys():
+        if key in exclude or key=="Codebase" or key=="Branch":
+            continue
+        elif key in named_columns:
+            # make this column
+            ### this is where depth comes in
+
+            namedcols[icol].append(tee+key+" ")
+            for info in verbose:
+                namedcols[icol].append(branch+dico[key][info]+" ")
+            # add depth-1 elements
+            if depth>0:
+                if DicoDepth(dico[key])>0:
+                    this_dict=dico[key]
+                    for key1 in dico[key].keys():
+                        if key1 not in exclude:
+                            this_str=branch+tee+key1+" "
+                            namedcols[icol].append(this_str)
+                            for info in verbose:
+                                infostr=branch+branch+this_dict[key1][info]+" "
+                                namedcols[icol].append(infostr)
+                            # add depth-2 elements
+                            if depth>1:
+                                this_dict1=this_dict[key1]
+                                if DicoDepth(this_dict1)>0:
+                                    for key2 in this_dict1.keys():
+                                        if key2 not in exclude:
+                                            namedcols[icol].append(branch+branch+tee+key2+" ")
+                                            for info in verbose:
+                                                namedcols[icol].append(branch+branch+branch+this_dict1[key2][info]+" ")
+                                            # add depth-3 elements
+                                            if depth>2:
+                                                this_dict2=this_dict1[key2]
+                                                if DicoDepth(this_dict2)>0:
+                                                    for key3 in this_dict2.keys():
+                                                        if key3 not in exclude:
+                                                            namedcols[icol].append(branch+branch+branch+tee+key3+" ")
+                                                            for info in verbose:
+                                                                namedcols[icol].append(branch+branch+branch+branch+this_dict1[key3][info]+" ")
+                                                            # add depth-4 elements
+                                                            if depth>3:
+                                                                this_dict3=this_dict2[key3]
+                                                                for key4 in this_dict3.keys():
+                                                                    if key4 not in exclude:
+                                                                        namedcols[icol].append(branch+branch+branch+branch+tee+key4+" ")
+                                                                        for info in verbose:
+                                                                            namedcols[icol].append(branch+branch+branch+branch+branch+this_dict1[key4][info]+" ")
+                                                                        # add depth-5 elements
+                                                                        if depth>4:
+                                                                            this_dict4=this_dict3[key4]
+                                                                            for key5 in this_dict4.keys():
+                                                                                if key5 not in exclude:
+                                                                                    namedcols[icol].append(branch+branch+branch+branch+branch+tee+key5+" ")
+                                                                                    for info in verbose:
+                                                                                        namedcols[icol].append(branch+branch+branch+branch+branch+branch+this_dict1[key5][info]+" ")
+
+                                            
+
+#            namedcols[icol].append(tee+key+" ")
+#            for info in verbose:
+#                namedcols[icol].append(branch+dico[key][info]+" ")
+            icol+=1
+        else:
+            # dump all other files in the "remainder" column
+            ### this is where depth comes in
+            lastcol.append(tee+key+" ")
+            for info in verbose:
+                lastcol.append(branch+dico[key][info]+" ")
+    namedcols.append(lastcol)
+#    stop
+    # homogenise column lengths
+    maxcollength=0
+    for col in namedcols:
+        if len(col)>maxcollength:
+            maxcollength=len(col)
+    for col in namedcols:
+        thiscollen=len(col)
+        for i in range(maxcollength-thiscollen):
+            col.append("")    
+    # homogenise line lengths
+    for icol,col in enumerate(namedcols):
+        linelength=0
+        for line in col:
+            if len(line)>linelength:
+                linelength=len(line)
+        for iline,line in enumerate(col):
+            namedcols[icol][iline]=line+" "*(linelength-len(line))
+    # make line linking header to body
+    headlines=[]
+    for col in namedcols:
+        headline = "┬"+"─"*(len(col[0])-1)
+        headlines.append(headline)
+    headlines[0]=headlines[0].replace("┬","├")
+    headlines[-1]="┐"
+    ncols=len(namedcols)
+    lencols=len(namedcols[0])+1
+    namedcols=np.append(np.array(headlines),np.array(namedcols).T).reshape(lencols,ncols)
+    for iline in range(namedcols.shape[0]):
+        linestr=""
+        for icol in range(namedcols.shape[1]):
+            linestr = linestr+namedcols[iline,icol]
+        print(linestr)
+
+
+
+
+PrintDictStructure(ddf_dict,named_columns=["DDFacet","SkyModel"],verbose=["comment"],depth=1)
