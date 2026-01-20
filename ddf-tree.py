@@ -356,95 +356,95 @@ ddf_dict["DDFacet"]["plot_clean_logs.py"]={"comment":"describe"}
 ddf_dict["DDFacet"]["report_version.py"]={"comment":"describe"}
 
 
-* SkyModel
-  * Array
-    . RecArrayOps.py
-    . __init__.py
-  * Mask
-    . ClassBrightFaintOverAll.py
-    . ClassBrightFaintOverAllDEAP.py
-    . ClassBrightFaintPerFacet.py
-    . __init__.py
-  * Other
-    . ClassCasaImage.py
-    . ModColor.py
-    . ModCoord.py
-    . MyHist.py
-    . MyLogger.py
-    . MyPickle.py
-    . __init__.py
-    . progressbar.py
-    . rad2hmsdms.py
-    . reformat.py
-    . terminal.py
-  * PSourceExtract
-    . ClassFitIslands.py
-    . ClassGaussFit.py
-    . ClassIncreaseIsland.py
-    . ClassIslands.py
-    . ClassPointFit.py
-    . ClassPointFit2.py
-    . Gaussian.py
-    . ModConvPSF.py
-    . TestGaussFit.py
-    . __init__.py
-    . findrms.py
-  * Sky
-    * Models/LOFAR
-      . CasA.txt
-      . CygA.txt
-      . TauA.txt
-      . VirA.txt
-    . ClassAppendSource.py
-    . ClassClusterClean.py
-    . ClassClusterDEAP.py
-    . ClassClusterKMean.py
-    . ClassClusterRadial.py
-    . ClassClusterSquareRadial.py
-    . ClassClusterTessel.py
-    . ClassMetricDEAP.py
-    . ClassSM.py
-    . DeapAlgo.py
-    . ModBBS2np.py
-    . ModKMean.py
-    . ModRegFile.py
-    . ModSMFromFITS.py
-    . ModSMFromNp.py
-    . ModTigger.py
-    . ModVoronoi.py
-    . ModVoronoiToReg.py
-    . __init__.py
-  * Test
-    . ModelRandom00.txt
-  * Tools
-    . ModFFTW.py
-    . PolygonTools.py
-    . __init__.py
-  . .gitignore
-  . ClusterCat.py
-  . ExtractPSources.py
-  . Gaussify.py
-  . MakeCatalog.py
-  . MakeMask.py
-  . MakeModel.py
-  . MaskDicoModel.py
-  . MyCasapy2bbs.py
-  . PEX.py
-  . __init__.py
-  . __main__.py
-  . dsm.py
-  . dsreg.py
-. .gitignore
-. .gitmodules
-. Jenkinsfile.sh
-. LICENSE.md
-. README.rst
-. apt.sources.list
-. docker.2004
-. docker.2204
-. migratenumpy.sh
-. pyproject.toml
-
+ddf_dict["SkyModel"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Array"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Array"]["RecArrayOps.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Array"]["__init__.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Mask"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Mask"]["ClassBrightFaintOverAll.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Mask"]["ClassBrightFaintOverAllDEAP.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Mask"]["ClassBrightFaintPerFacet.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Mask"]["__init__.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Other"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Other"]["ClassCasaImage.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Other"]["ModColor.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Other"]["ModCoord.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Other"]["MyHist.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Other"]["MyLogger.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Other"]["MyPickle.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Other"]["__init__.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Other"]["progressbar.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Other"]["rad2hmsdms.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Other"]["reformat.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Other"]["terminal.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["PSourceExtract"]={"comment":"describe"}
+ddf_dict["SkyModel"]["PSourceExtract"]["ClassFitIslands.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["PSourceExtract"]["ClassGaussFit.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["PSourceExtract"]["ClassIncreaseIsland.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["PSourceExtract"]["ClassIslands.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["PSourceExtract"]["ClassPointFit.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["PSourceExtract"]["ClassPointFit2.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["PSourceExtract"]["Gaussian.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["PSourceExtract"]["ModConvPSF.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["PSourceExtract"]["TestGaussFit.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["PSourceExtract"]["__init__.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["PSourceExtract"]["findrms.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]["Models"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]["Models"]["LOFAR"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]["Models"]["LOFAR"]["CasA.txt"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]["Models"]["LOFAR"]["CygA.txt"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]["Models"]["LOFAR"]["TauA.txt"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]["Models"]["LOFAR"]["VirA.txt"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]["ClassAppendSource.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]["ClassClusterClean.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]["ClassClusterDEAP.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]["ClassClusterKMean.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]["ClassClusterRadial.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]["ClassClusterSquareRadial.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]["ClassClusterTessel.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]["ClassMetricDEAP.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]["ClassSM.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]["DeapAlgo.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]["ModBBS2np.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]["ModKMean.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]["ModRegFile.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]["ModSMFromFITS.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]["ModSMFromNp.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]["ModTigger.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]["ModVoronoi.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]["ModVoronoiToReg.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Sky"]["__init__.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Test"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Test"]["ModelRandom00.txt"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Tools"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Tools"]["ModFFTW.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Tools"]["PolygonTools.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Tools"]["__init__.py"]={"comment":"describe"}
+ddf_dict["SkyModel"][".gitignore"]={"comment":"describe"}
+ddf_dict["SkyModel"]["ClusterCat.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["ExtractPSources.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Gaussify.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["MakeCatalog.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["MakeMask.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["MakeModel.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["MaskDicoModel.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["MyCasapy2bbs.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["PEX.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["__init__.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["__main__.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["dsm.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["dsreg.py"]={"comment":"describe"}
+ddf_dict[".gitignore"]={"comment":"describe"}
+ddf_dict[".gitmodules"]={"comment":"describe"}
+ddf_dict["Jenkinsfile.sh"]={"comment":"describe"}
+ddf_dict["LICENSE.md"]={"comment":"describe"}
+ddf_dict["README.rst"]={"comment":"describe"}
+ddf_dict["apt.sources.list"]={"comment":"describe"}
+ddf_dict["docker.2004"]={"comment":"describe"}
+ddf_dict["docker.2204"]={"comment":"describe"}
+ddf_dict["migratenumpy.sh"]={"comment":"describe"}
+ddf_dict["pyproject.toml"]={"comment":"describe"}
 
 ### build up branch strings
 for key in ddf_dict:
