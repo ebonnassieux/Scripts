@@ -8,65 +8,65 @@ ddf_dict["Branch"]   = "MassiveMerge_PR_SSD3_FullParallel_OverlapIslands_ModelIm
 
 ddf_dict["DDFacet"]={"comment":"This is the main DDFacet repository."}
 
-ddf_dict["DDFacet"]["Array"]={"comment":"describe array"}
-ddf_dict["DDFacet"]["Array"]["ModLinAlg.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Array"]["ModSharedArray.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Array"]["NpParallel.py"]={"comment":"describe npparallel"}
-ddf_dict["DDFacet"]["Array"]["NpShared.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Array"]["PrintRecArray.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Array"][" __init__.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Array"]["lsqnonneg.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Array"]["shared_dict.py"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Array"]={"comment":"Contains array/matrix manipulation functions"}
+ddf_dict["DDFacet"]["Array"]["ModLinAlg.py"]={"comment":"Matrix inversion and manipulation functions."}
+ddf_dict["DDFacet"]["Array"]["ModSharedArray.py"]={"comment":"Numpy to sharedarray conversion functions."}
+ddf_dict["DDFacet"]["Array"]["NpParallel.py"]={"comment":"Functions to add matrixes of different size to each other, and to find max in a matrix"}
+ddf_dict["DDFacet"]["Array"]["NpShared.py"]={"comment":"Shared dictionary functions"}
+ddf_dict["DDFacet"]["Array"]["PrintRecArray.py"]={"comment":"Prettytable print for recarrays"}
+ddf_dict["DDFacet"]["Array"][" __init__.py"]={"comment":"Contains DDF disclaimer"}
+ddf_dict["DDFacet"]["Array"]["lsqnonneg.py"]={"comment":"Linear least squares with nonnegativity constraints."}
+ddf_dict["DDFacet"]["Array"]["shared_dict.py"]={"comment":"Defines shared-memory dictionary object."}
 
-ddf_dict["DDFacet"]["Data"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Data"]["ClassATCABeam.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Data"]["ClassBeamMean.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Data"]["ClassDaskMS.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Data"]["ClassData.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Data"]["ClassEveryBeam.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Data"]["ClassFITSBeam.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Data"]["ClassGMRTBeam.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Data"]["ClassJones.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Data"]["ClassLOFARBeam.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Data"]["ClassMS.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Data"]["ClassNenuBeam.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Data"]["ClassSmearMapping.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Data"]["ClassSmoothJones.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Data"]["ClassStokes.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Data"]["ClassVisServer.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Data"]["ClassWeightMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Data"]["PointingProvider.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Data"]["__init__.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Data"]["sidereal.py"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Data"]={"comment":"Contains functions and classes to read raw and intermediate interferometric data."}
+ddf_dict["DDFacet"]["Data"]["ClassATCABeam.py"]={"comment":"Returns ATCA primary beam Jones matrices at requested coordinates."}
+ddf_dict["DDFacet"]["Data"]["ClassBeamMean.py"]={"comment":"Smoothes and averages beam values between facets."}
+ddf_dict["DDFacet"]["Data"]["ClassDaskMS.py"]={"comment":"Defines the DaskMS object for internal use."}
+ddf_dict["DDFacet"]["Data"]["ClassData.py"]={"comment":"Defines data properties: pointing, BLmapping, current data/timebin"}
+ddf_dict["DDFacet"]["Data"]["ClassEveryBeam.py"]={"comment":"Returns Everybeam skala40_wave primary beam J-mats at req. coords."}
+ddf_dict["DDFacet"]["Data"]["ClassFITSBeam.py"]={"comment":"Interpreter for MeerKAT .fits beam files. Check if up to date..."}
+ddf_dict["DDFacet"]["Data"]["ClassGMRTBeam.py"]={"comment":"Returns GMRT primary beam Jones matrices at requested coordinates."}
+ddf_dict["DDFacet"]["Data"]["ClassJones.py"]={"comment":"!CRITICAL! Defines DD-Jones matrix format for DDF, incl. read/write."}
+ddf_dict["DDFacet"]["Data"]["ClassLOFARBeam.py"]={"comment":"Returns LOFAR primary beam Jones matrices at requested coordinates."}
+ddf_dict["DDFacet"]["Data"]["ClassMS.py"]={"comment":"!CRITICAL! Defines the DDF internal MS object."}
+ddf_dict["DDFacet"]["Data"]["ClassNenuBeam.py"]={"comment":"Returns NenUFAR primary beam Jones matrices at requested coordinates."}
+ddf_dict["DDFacet"]["Data"]["ClassSmearMapping.py"]={"comment":"Computes visibility smearing mapping for given BL t/nu averaging."}
+ddf_dict["DDFacet"]["Data"]["ClassSmoothJones.py"]={"comment":"Applies Jones-matrix smoothing by some alpha parameter"}
+ddf_dict["DDFacet"]["Data"]["ClassStokes.py"]={"comment":"Functions to go from Stokes to corrs, following NRAO definitions."}
+ddf_dict["DDFacet"]["Data"]["ClassVisServer.py"]={"comment":"!CRITICAL! Interface between MS and vis chunks, applying BDA etc."}
+ddf_dict["DDFacet"]["Data"]["ClassWeightMachine.py"]={"comment":"Handles imaging weights (Briggs, WEIGHT column etc)"}
+ddf_dict["DDFacet"]["Data"]["PointingProvider.py"]={"comment":"Reads external pointing solutions, interpolates in time per antenna."}
+ddf_dict["DDFacet"]["Data"]["__init__.py"]={"comment":"Contains DDF disclaimer"}
+ddf_dict["DDFacet"]["Data"]["sidereal.py"]={"comment":"External module. \"A Python module for astronomical calculations\". "}
 
-ddf_dict["DDFacet"]["Gridder"]={"comment":"describe gridder"}
-ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["CMakeLists.txt"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["Constants.h"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["Gridder.c"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["Gridder.h"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["GridderSmearPols.c"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["GridderSmearPols.h"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["JonesServer.c"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["Matrix.c"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["Semaphores.h"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["Stokes.h"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["Tools.h"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["Arrays.cc"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["CMakeLists.txt"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["CorrelationCalculator.h"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["DecorrelationHelper.cc"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["DecorrelationHelper.h"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["GridderSmearPols.cc"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["JonesServer.h"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["JonesServer.cc"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["Semaphores.cc"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["Semaphores.h"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["Stokes.h"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["__init__.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["common.h"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["degridder.h"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Gridder"]["gridder.h"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Gridder"]={"comment":"Contains the gridding/degridding functionalities."}
+ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]={"comment":"I assume this is deprecated."}
+ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["CMakeLists.txt"]={"comment":"Bld and install instructions."}
+ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["Constants.h"]={"comment":"Defines c and pi."}
+ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["Gridder.c"]={"comment":"!CRITICAL! Gridder code."}
+ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["Gridder.h"]={"comment":"!CRITICAL! Gridder header."}
+ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["GridderSmearPols.c"]={"comment":"Huge file. To investigate."}
+ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["GridderSmearPols.h"]={"comment":"Smeared gridder header."}
+ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["JonesServer.c"]={"comment":"Jones, NormJones operations+print."}
+ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["Matrix.c"]={"comment":"Matrix operations."}
+ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["Semaphores.h"]={"comment":"Give, set, delete semaphores."}
+ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["Stokes.h"]={"comment":"IQUV-XYRL conversion functions."}
+ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["Tools.h"]={"comment":"GiveFreqStep, FATAL+errprint."}
+ddf_dict["DDFacet"]["Gridder"]["Arrays.cc"]={"comment":"OpenMP array operations."}
+ddf_dict["DDFacet"]["Gridder"]["CMakeLists.txt"]={"comment":"cmake for _pyArrays, _pyGridderSmearPols."}
+ddf_dict["DDFacet"]["Gridder"]["CorrelationCalculator.h"]={"comment":"Estimates BDA correction."}
+ddf_dict["DDFacet"]["Gridder"]["DecorrelationHelper.cc"]={"comment":"Calculates DecorrFactor."}
+ddf_dict["DDFacet"]["Gridder"]["DecorrelationHelper.h"]={"comment":"Header for above."}
+ddf_dict["DDFacet"]["Gridder"]["GridderSmearPols.cc"]={"comment":"Stokes management for smearing."}
+ddf_dict["DDFacet"]["Gridder"]["JonesServer.cc"]={"comment":"Jones operation functions in C."}
+ddf_dict["DDFacet"]["Gridder"]["JonesServer.h"]={"comment":"Header for above."}
+ddf_dict["DDFacet"]["Gridder"]["Semaphores.cc"]={"comment":"Give, set, and delete semaphores."}
+ddf_dict["DDFacet"]["Gridder"]["Semaphores.h"]={"comment":"Header for above."}
+ddf_dict["DDFacet"]["Gridder"]["Stokes.h"]={"comment":"Header for IQUV-XYRL Stokes grid/degrid."}
+ddf_dict["DDFacet"]["Gridder"]["__init__.py"]={"comment":"Empty"}
+ddf_dict["DDFacet"]["Gridder"]["common.h"]={"comment":"Namespace definition? I don't understand this one."}
+ddf_dict["DDFacet"]["Gridder"]["degridder.h"]={"comment":"!CRITTICAL! Header for degridder"}
+ddf_dict["DDFacet"]["Gridder"]["gridder.h"]={"comment":"!CRITICAL! Header for gridder"}
 
 ddf_dict["DDFacet"]["Imager"]={"comment":"describe"}
 
@@ -222,32 +222,32 @@ ddf_dict["DDFacet"]["Imager"]["ModCF.py"]={"comment":"describe"}
 ddf_dict["DDFacet"]["Imager"]["ModModelMachine.py"]={"comment":"describe"}
 ddf_dict["DDFacet"]["Imager"]["__init__.py"]={"comment":"describe"}
 
-ddf_dict["DDFacet"]["Other"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Other"]["AsciiReader.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Other"]["AsyncProcessPool.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Other"]["CacheManager.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Other"]["ClassGiveSolsFile.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Other"]["ClassJonesDomains.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Other"]["ClassPrint.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Other"]["ClassTimeIt.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Other"]["Exceptions.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Other"]["MPIManager.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Other"]["ModColor.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Other"]["ModProbeCPU.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Other"]["Multiprocessing.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Other"]["MyImshow.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Other"]["MyLogger.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Other"]["MyPickle.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Other"]["PrintList.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Other"]["PrintOptParse.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Other"]["README-APP.md"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Other"]["__init__.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Other"]["grepall.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Other"]["logger.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Other"]["logo.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Other"]["progressbar.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Other"]["reformat.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Other"]["terminal.py"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Other"]={"comment":"Contains logger, debug and terminal functionalities."}
+ddf_dict["DDFacet"]["Other"]["AsciiReader.py"]={"comment":"Readers for MultiFieldFile, txt, csv, Ascii."}
+ddf_dict["DDFacet"]["Other"]["AsyncProcessPool.py"]={"comment":"AsyncProcessPool management functions."}
+ddf_dict["DDFacet"]["Other"]["CacheManager.py"]={"comment":"!CRITICAL! Manages DDF caching. Has docs <3"}
+ddf_dict["DDFacet"]["Other"]["ClassGiveSolsFile.py"]={"comment":"Handles kMS filenames and solsdir."}
+ddf_dict["DDFacet"]["Other"]["ClassJonesDomains.py"]={"comment":"Defines Jones domains + MergeJones."}
+ddf_dict["DDFacet"]["Other"]["ClassPrint.py"]={"comment":"Defines DDF output print parameters."}
+ddf_dict["DDFacet"]["Other"]["ClassTimeIt.py"]={"comment":"Timer class for logging+monitoring."}
+ddf_dict["DDFacet"]["Other"]["Exceptions.py"]={"comment":"Exceptions handler. Also enables pbd."}
+ddf_dict["DDFacet"]["Other"]["MPIManager.py"]={"comment":"Handles MPI management. I dont get it."}
+ddf_dict["DDFacet"]["Other"]["ModColor.py"]={"comment":"Defines custom DDF output colours"}
+ddf_dict["DDFacet"]["Other"]["ModProbeCPU.py"]={"comment":"TrackCPU, gets CPU load and times."}
+ddf_dict["DDFacet"]["Other"]["Multiprocessing.py"]={"comment":"Handles shared memory management."}
+ddf_dict["DDFacet"]["Other"]["MyImshow.py"]={"comment":"GiveVal, imshow. Looks like convenience function."}
+ddf_dict["DDFacet"]["Other"]["MyLogger.py"]={"comment":"Defines and sets logger parameters."}
+ddf_dict["DDFacet"]["Other"]["MyPickle.py"]={"comment":"Defines pickle save, load, convert"}
+ddf_dict["DDFacet"]["Other"]["PrintList.py"]={"comment":"Defines ListToStr."}
+ddf_dict["DDFacet"]["Other"]["PrintOptParse.py"]={"comment":"Defines PrintOptParse."}
+ddf_dict["DDFacet"]["Other"]["README-APP.md"]={"comment":"Multiprocessing w/ AsyncProcessPool + SharedDict"}
+ddf_dict["DDFacet"]["Other"]["__init__.py"]={"comment":"_handle_exception, {enable/disable}_pdb_on_exception"}
+ddf_dict["DDFacet"]["Other"]["grepall.py"]={"comment":"'grep -r \"name\" --include=*.typein .'%(name,typein)"}
+ddf_dict["DDFacet"]["Other"]["logger.py"]={"comment":"!CRITICAL! Detailed logger params and behaviour."}
+ddf_dict["DDFacet"]["Other"]["logo.py"]={"comment":"ASCII art."}
+ddf_dict["DDFacet"]["Other"]["progressbar.py"]={"comment":"Nadia Alramli progress bar."}
+ddf_dict["DDFacet"]["Other"]["reformat.py"]={"comment":"Reformats / characters in a string"}
+ddf_dict["DDFacet"]["Other"]["terminal.py"]={"comment":"Nadia Alramli terminal variables and functions."}
 
 ddf_dict["DDFacet"]["Parset"]={"comment":"describe"}
 ddf_dict["DDFacet"]["Parset"]["DefaultParset.cfg"]={"comment":"describe"}
@@ -301,29 +301,29 @@ ddf_dict["DDFacet"]["Tests"]["VeryLongAcceptanceTests"]["__init__.py"]={"comment
 ddf_dict["DDFacet"]["Tests"]["__init.py__"]={"comment":"describe"}
 
 ddf_dict["DDFacet"]["ToolsDir"]={"comment":"describe"}
-ddf_dict["DDFacet"]["ToolsDir"]["CatToFreqs.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["ToolsDir"]["ClassAdaptShape.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["ToolsDir"]["ClassMovieMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["ToolsDir"]["ClassSpectralFunctions.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["ToolsDir"]["Gaussian.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["ToolsDir"]["GeneDist.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["ToolsDir"]["GiveEdges.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["ToolsDir"]["GiveMDC.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["ToolsDir"]["ModCoord.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["ToolsDir"]["ModFFTW.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["ToolsDir"]["ModFitPSF.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["ToolsDir"]["ModFitPoly2D.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["ToolsDir"]["ModMosaic.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["ToolsDir"]["ModParset.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["ToolsDir"]["ModRotate.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["ToolsDir"]["ModTaper.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["ToolsDir"]["ModToolBox.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["ToolsDir"]["__init__.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["ToolsDir"]["casapy2bbs.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["ToolsDir"]["fft_comparison.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["ToolsDir"]["findrms.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["ToolsDir"]["gaussfitter2.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["ToolsDir"]["rad2hmsdms.py"]={"comment":"describe"}
+ddf_dict["DDFacet"]["ToolsDir"]["CatToFreqs.py"]={"comment":"Sets frequency values for input catalog"}
+ddf_dict["DDFacet"]["ToolsDir"]["ClassAdaptShape.py"]={"comment":"Make image cutouts or padding"}
+ddf_dict["DDFacet"]["ToolsDir"]["ClassMovieMachine.py"]={"comment":"Makes movies out of png files"}
+ddf_dict["DDFacet"]["ToolsDir"]["ClassSpectralFunctions.py"]={"comment":"Includes beam and spi stuff."}
+ddf_dict["DDFacet"]["ToolsDir"]["Gaussian.py"]={"comment":"Variety of gaussian functions."}
+ddf_dict["DDFacet"]["ToolsDir"]["GeneDist.py"]={"comment":"Generates distributions and samples."}
+ddf_dict["DDFacet"]["ToolsDir"]["GiveEdges.py"]={"comment":"Finds edges of arrays."}
+ddf_dict["DDFacet"]["ToolsDir"]["GiveMDC.py"]={"comment":"Multi Direction Calib (?)"}
+ddf_dict["DDFacet"]["ToolsDir"]["ModCoord.py"]={"comment":"lm-radec coord convertors."}
+ddf_dict["DDFacet"]["ToolsDir"]["ModFFTW.py"]={"comment":"Attempt at parallelising FFTW with APP."}
+ddf_dict["DDFacet"]["ToolsDir"]["ModFitPSF.py"]={"comment":"Finds restoring beam. THIS ONE SUCKS"}
+ddf_dict["DDFacet"]["ToolsDir"]["ModFitPoly2D.py"]={"comment":"Two-dimensional polynomial fit."}
+ddf_dict["DDFacet"]["ToolsDir"]["ModMosaic.py"]={"comment":"I think this is a mosaicker."}
+ddf_dict["DDFacet"]["ToolsDir"]["ModParset.py"]={"comment":"Parset-objects functions."}
+ddf_dict["DDFacet"]["ToolsDir"]["ModRotate.py"]={"comment":"Rotate phase centre."}
+ddf_dict["DDFacet"]["ToolsDir"]["ModTaper.py"]={"comment":"Gaussian tapering function."}
+ddf_dict["DDFacet"]["ToolsDir"]["ModToolBox.py"]={"comment":"Variety of FFTs and functions."}
+ddf_dict["DDFacet"]["ToolsDir"]["__init__.py"]={"comment":"Contains DDFacet license"}
+ddf_dict["DDFacet"]["ToolsDir"]["casapy2bbs.py"]={"comment":"Casacore image to BBS convertor."}
+ddf_dict["DDFacet"]["ToolsDir"]["fft_comparison.py"]={"comment":"Test file for pyFFTW3 and PyFFTW."}
+ddf_dict["DDFacet"]["ToolsDir"]["findrms.py"]={"comment":"RMS finder. Different from SkyModel function?"}
+ddf_dict["DDFacet"]["ToolsDir"]["gaussfitter2.py"]={"comment":"2D Gaussian fitter w/ various functions."}
+ddf_dict["DDFacet"]["ToolsDir"]["rad2hmsdms.py"]={"comment":"rad-HHMMSS convertor."}
 
 ddf_dict["DDFacet"]["cmake"]={"comment":"describe"}
 ddf_dict["DDFacet"]["cmake"]["FindCasaCore.cmake"]={"comment":"describe"}
@@ -353,102 +353,132 @@ ddf_dict["DDFacet"]["report_version.py"]={"comment":"describe"}
 
 
 ddf_dict["SkyModel"]={"comment":"This repository contains the sky model codebase"}
-ddf_dict["SkyModel"]["Array"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Array"]["RecArrayOps.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Array"]["__init__.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Mask"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Mask"]["ClassBrightFaintOverAll.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Mask"]["ClassBrightFaintOverAllDEAP.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Mask"]["ClassBrightFaintPerFacet.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Mask"]["__init__.py"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Array"]={"comment":"Contains fundamental recarray manipulation functions."}
+ddf_dict["SkyModel"]["Array"]["RecArrayOps.py"]={"comment":"Module to add and remove elements of a recarray."}
+ddf_dict["SkyModel"]["Array"]["RecArrayOps.py"]["verbose"]="recarray: Construct an ndarray that allows field access using attributes."
+ddf_dict["SkyModel"]["Array"]["RecArrayOps.py"]["dependencies"]=["from __future__ import division, absolute_import, print_function\n",
+                                                                 "numpy.lib.recfunctions",
+                                                                 "numpy"]
+ddf_dict["SkyModel"]["Array"]["RecArrayOps.py"]["functions"]=["AppendField",
+                                                              "RemoveField"]
+ddf_dict["SkyModel"]["Array"]["__init__.py"]={"comment":"Empty."}
+ddf_dict["SkyModel"]["Mask"]={"comment":"Contains functions to make imaging masks."}
+ddf_dict["SkyModel"]["Mask"]["ClassBrightFaintOverAll.py"]={"comment":"Make SSD-island-based mask, with FFT filtering applied."}
+ddf_dict["SkyModel"]["Mask"]["ClassBrightFaintOverAllDEAP.py"]={"comment":"As above, but for DEAP clustering."}
+ddf_dict["SkyModel"]["Mask"]["ClassBrightFaintPerFacet.py"]={"comment":"Make mask for a single facet."}
+ddf_dict["SkyModel"]["Mask"]["ClassBrightFaintPerFacet.py"]["dependencies"]=["numpy",
+                                                                             "import DDFacet.Imager.SSD.ClassIslandDistanceMachine",
+                                                                             "from DDFacet.Other import logger",
+                                                                             "log=logger.getLogger(\"ClassBrightFaint\")",
+                                                                             "from astropy.io import fits",
+                                                                             "import DDFacet.Other.MyPickle",
+                                                                             "from matplotlib.path import Path",
+                                                                             "from DDFacet.ToolsDir import ModFFTW",
+                                                                             "from pyrap.images import image",
+                                                                             "import SkyModel.Sky.ModRegFile",
+                                                                             "import scipy.signal"]
+ddf_dict["SkyModel"]["Mask"]["__init__.py"]={"comment":"Empty"}
 ddf_dict["SkyModel"]["Other"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Other"]["ClassCasaImage.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Other"]["ModColor.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Other"]["ModCoord.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Other"]["MyHist.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Other"]["MyLogger.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Other"]["MyPickle.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Other"]["__init__.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Other"]["progressbar.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Other"]["rad2hmsdms.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Other"]["reformat.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Other"]["terminal.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["PSourceExtract"]={"comment":"describe"}
-ddf_dict["SkyModel"]["PSourceExtract"]["ClassFitIslands.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["PSourceExtract"]["ClassGaussFit.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["PSourceExtract"]["ClassIncreaseIsland.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["PSourceExtract"]["ClassIslands.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["PSourceExtract"]["ClassPointFit.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["PSourceExtract"]["ClassPointFit2.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["PSourceExtract"]["Gaussian.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["PSourceExtract"]["ModConvPSF.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["PSourceExtract"]["TestGaussFit.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["PSourceExtract"]["__init__.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["PSourceExtract"]["findrms.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]["Models"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]["Models"]["LOFAR"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]["Models"]["LOFAR"]["CasA.txt"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]["Models"]["LOFAR"]["CygA.txt"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]["Models"]["LOFAR"]["TauA.txt"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]["Models"]["LOFAR"]["VirA.txt"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]["ClassAppendSource.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]["ClassClusterClean.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]["ClassClusterDEAP.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]["ClassClusterKMean.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]["ClassClusterRadial.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]["ClassClusterSquareRadial.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]["ClassClusterTessel.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]["ClassMetricDEAP.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]["ClassSM.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]["DeapAlgo.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]["ModBBS2np.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]["ModKMean.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]["ModRegFile.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]["ModSMFromFITS.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]["ModSMFromNp.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]["ModTigger.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]["ModVoronoi.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]["ModVoronoiToReg.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Sky"]["__init__.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Test"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Test"]["ModelRandom00.txt"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Tools"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Tools"]["ModFFTW.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Tools"]["PolygonTools.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Tools"]["__init__.py"]={"comment":"describe"}
-ddf_dict["SkyModel"][".gitignore"]={"comment":"describe"}
-ddf_dict["SkyModel"]["ClusterCat.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["ExtractPSources.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["Gaussify.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["MakeCatalog.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["MakeMask.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["MakeModel.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["MaskDicoModel.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["MyCasapy2bbs.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["PEX.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["__init__.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["__main__.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["dsm.py"]={"comment":"describe"}
-ddf_dict["SkyModel"]["dsreg.py"]={"comment":"describe"}
-ddf_dict[".gitignore"]={"comment":"describe"}
-ddf_dict[".gitmodules"]={"comment":"describe"}
-ddf_dict["Jenkinsfile.sh"]={"comment":"describe"}
-ddf_dict["LICENSE.md"]={"comment":"describe"}
-ddf_dict["README.rst"]={"comment":"describe"}
-ddf_dict["apt.sources.list"]={"comment":"describe"}
-ddf_dict["docker.2004"]={"comment":"describe"}
-ddf_dict["docker.2204"]={"comment":"describe"}
-ddf_dict["migratenumpy.sh"]={"comment":"describe"}
-ddf_dict["pyproject.toml"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Other"]["ClassCasaImage.py"]={"comment":"Creates CASA image objects from inputs."}
+ddf_dict["SkyModel"]["Other"]["ModColor.py"]={"comment":"Defines log colours used."}
+ddf_dict["SkyModel"]["Other"]["ModCoord.py"]={"comment":"Coordinate operation functions."}
+ddf_dict["SkyModel"]["Other"]["MyHist.py"]={"comment":"Percent progress calculator."}
+ddf_dict["SkyModel"]["Other"]["MyLogger.py"]={"comment":"Defines DDF logger parameters."}
+ddf_dict["SkyModel"]["Other"]["MyPickle.py"]={"comment":"Defines pickling dumping/loading params."}
+ddf_dict["SkyModel"]["Other"]["__init__.py"]={"comment":"Empty."}
+ddf_dict["SkyModel"]["Other"]["progressbar.py"]={"comment":"Animated progress bar by N. Alramli."}
+ddf_dict["SkyModel"]["Other"]["rad2hmsdms.py"]={"comment":"Converts radians to HMSDMS coords."}
+ddf_dict["SkyModel"]["Other"]["reformat.py"]={"comment":"Reformats strings with / characters."}
+ddf_dict["SkyModel"]["Other"]["terminal.py"]={"comment":"Sets DDF terminal environment variables."}
+ddf_dict["SkyModel"]["PSourceExtract"]={"comment":"Directory of methods and functions to find point source flux+position"}
+ddf_dict["SkyModel"]["PSourceExtract"]["ClassFitIslands.py"]={"comment":"Fits flux within an island. Sequential, parallel, multiprocessed."}
+ddf_dict["SkyModel"]["PSourceExtract"]["ClassGaussFit.py"]={"comment":"Finds Gaussian fits."}
+ddf_dict["SkyModel"]["PSourceExtract"]["ClassIncreaseIsland.py"]={"comment":"Embiggens islands (fast and slow options)"}
+ddf_dict["SkyModel"]["PSourceExtract"]["ClassIslands.py"]={"comment":"!CRITICAL! Defines island properties."}
+ddf_dict["SkyModel"]["PSourceExtract"]["ClassPointFit.py"]={"comment":"Finds point-source fits."}
+ddf_dict["SkyModel"]["PSourceExtract"]["ClassPointFit2.py"]={"comment":"Much more sophisticated version of the above."}
+ddf_dict["SkyModel"]["PSourceExtract"]["Gaussian.py"]={"comment":"Defines Gaussian properties"}
+ddf_dict["SkyModel"]["PSourceExtract"]["ModConvPSF.py"]={"comment":"Includes various Gaussian manipulation functions."}
+ddf_dict["SkyModel"]["PSourceExtract"]["TestGaussFit.py"]={"comment":"Testss the GaussFit function."}
+ddf_dict["SkyModel"]["PSourceExtract"]["__init__.py"]={"comment":"Empty."}
+ddf_dict["SkyModel"]["PSourceExtract"]["findrms.py"]={"comment":"Function to find local rms value."}
+ddf_dict["SkyModel"]["Sky"]={"comment":"Direcetory containing variety of sky-plane functions and operations"}
+ddf_dict["SkyModel"]["Sky"]["Models"]={"comment":"Contains test models. Probably for A-team clipping."}
+ddf_dict["SkyModel"]["Sky"]["Models"]["LOFAR"]={"comment":"Contains LOFAR-freq models."}
+ddf_dict["SkyModel"]["Sky"]["Models"]["LOFAR"]["CasA.txt"]={"comment":"Cassiopeia A"}
+ddf_dict["SkyModel"]["Sky"]["Models"]["LOFAR"]["CygA.txt"]={"comment":"Cygnus A"}
+ddf_dict["SkyModel"]["Sky"]["Models"]["LOFAR"]["TauA.txt"]={"comment":"Tau A"}
+ddf_dict["SkyModel"]["Sky"]["Models"]["LOFAR"]["VirA.txt"]={"comment":"Virgo A"}
+ddf_dict["SkyModel"]["Sky"]["ClassAppendSource.py"]={"comment":"Adds sources in Model and ephemerids to the model"}
+ddf_dict["SkyModel"]["Sky"]["ClassClusterClean.py"]={"comment":"Clusters the clean component source, can plot the process."}
+ddf_dict["SkyModel"]["Sky"]["ClassClusterDEAP.py"]={"comment":"As above, but for Distributed Evolutionary Algorithms in Python."}
+ddf_dict["SkyModel"]["Sky"]["ClassClusterKMean.py"]={"comment":"As above, but uses K-mean clustering."}
+ddf_dict["SkyModel"]["Sky"]["ClassClusterRadial.py"]={"comment":"As above, but based on nearest cluster I think."}
+ddf_dict["SkyModel"]["Sky"]["ClassClusterSquareRadial.py"]={"comment":"Not sure what the diff with above is."}
+ddf_dict["SkyModel"]["Sky"]["ClassClusterTessel.py"]={"comment":"Clusters in tessels"}
+ddf_dict["SkyModel"]["Sky"]["ClassMetricDEAP.py"]={"comment":"Contains DEAP variables and functions for clustering"}
+ddf_dict["SkyModel"]["Sky"]["ClassSM.py"]={"comment":"!CRITICAL! Defines the Sky Model object"}
+ddf_dict["SkyModel"]["Sky"]["DeapAlgo.py"]={"comment":"Contains DEAP algorithmic functions"}
+ddf_dict["SkyModel"]["Sky"]["ModBBS2np.py"]={"comment":"Converter to read BBS format skymodels. Outputs DDF format npy skymodel."}
+ddf_dict["SkyModel"]["Sky"]["ModKMean.py"]={"comment":"Tester for the K-mean clustering algorithm."}
+ddf_dict["SkyModel"]["Sky"]["ModRegFile.py"]={"comment":"Region-Polygon object functions."}
+ddf_dict["SkyModel"]["Sky"]["ModSMFromFITS.py"]={"comment":"Reads .fits file, outputs skymodel catalog."}
+ddf_dict["SkyModel"]["Sky"]["ModSMFromNp.py"]={"comment":"Reads numpy array, outputs skymodel catalog."}
+ddf_dict["SkyModel"]["Sky"]["ModTigger.py"]={"comment":"Reads Tigger model, outputs skymodel catalog."}
+ddf_dict["SkyModel"]["Sky"]["ModVoronoi.py"]={"comment":"Voronoi tesselation functions + test."}
+ddf_dict["SkyModel"]["Sky"]["ModVoronoiToReg.py"]={"comment":"Voronoi,Tessel -> Region functions."}
+ddf_dict["SkyModel"]["Sky"]["__init__.py"]={"comment":"Empty."}
+ddf_dict["SkyModel"]["Test"]={"comment":"Contains a test skymodel file"}
+ddf_dict["SkyModel"]["Test"]["ModelRandom00.txt"]={"comment":"Randomly-scattered point sources."}
+ddf_dict["SkyModel"]["Tools"]={"comment":"Contains modified (i)FFT functionalities and line-polygon interaction code"}
+ddf_dict["SkyModel"]["Tools"]["ModFFTW.py"]={"comment":"Modified (i)FFT functions, including Gaussian convolution (restoring beam?)."}
+ddf_dict["SkyModel"]["Tools"]["PolygonTools.py"]={"comment":"Functions to cut polygon objects with a line"}
+ddf_dict["SkyModel"]["Tools"]["PolygonTools.py"]["functions"]=["GiveABLin",
+                                                               "GiveA",
+                                                               "CutLineInside"]
+ddf_dict["SkyModel"]["Tools"]["PolygonTools.py"]["dependencies"]=["from __future__ import division, absolute_import, print_function",
+                                                                  "Polygon",
+                                                                  "numpy"]
+
+ddf_dict["SkyModel"]["Tools"]["__init__.py"]={"comment":"Empty"}
+ddf_dict["SkyModel"][".gitignore"]={"comment":"Excludes various compilation/build files from git repo"}
+ddf_dict["SkyModel"]["ClusterCat.py"]={"comment":"Groups an input catalog into N clusters as specified by command"}
+ddf_dict["SkyModel"]["ExtractPSources.py"]={"comment":"Finds islands of flux in an input image, then fits point sources per island. Outputs SkyModel object."}
+ddf_dict["SkyModel"]["Gaussify.py"]={"comment":"As ExtractPSources, but also applies a restoring beam / gaussian blur."}
+ddf_dict["SkyModel"]["MakeCatalog.py"]={"comment":"Wrapper for PyBDSF"}
+ddf_dict["SkyModel"]["MakeMask.py"]={"comment":"Creates a mask for imaging purposes"}
+ddf_dict["SkyModel"]["MakeModel.py"]={"comment":"Manipulates a SkyModel object. Invoked to change the clustering."}
+ddf_dict["SkyModel"]["MaskDicoModel.py"]={"comment":"Apply mask object to DicoModel object for filtering purposes."}
+ddf_dict["SkyModel"]["MyCasapy2bbs.py"]={"comment":"Convert CASA fits model to BBS format skymodel"}
+ddf_dict["SkyModel"]["PEX.py"]={"comment":"Not sure what this does. Looks like the restored image builder? Returns a SkyModel object"}
+ddf_dict["SkyModel"]["__init__.py"]={"comment":"Empty"}
+ddf_dict["SkyModel"]["__main__.py"]={"comment":"Defines how all objects in Tools are invoked. Looks like it is basically plumbing."}
+ddf_dict["SkyModel"]["dsm.py"]={"comment":"Python wrapper for ds9, with convenient defaults for image visualisation/comparison."}
+ddf_dict["SkyModel"]["dsreg.py"]={"comment":"Python wrapper for ds9 with region loading."}
+ddf_dict[".gitignore"]={"comment":"Defines files to avoid pushing to git repo"}
+ddf_dict[".gitmodules"]={"comment":"Empty"}
+ddf_dict["Jenkinsfile.sh"]={"comment":"Instructions for Jenkins deployment"}
+ddf_dict["LICENSE.md"]={"comment":"GNU General Public License"}
+ddf_dict["README.rst"]={"comment":"Deprecated README doc."}
+ddf_dict["apt.sources.list"]={"comment":"Used for the docker build files"}
+ddf_dict["docker.2004"]={"comment":"Deprecated 20.04 dockerfile build file, I assume"}
+ddf_dict["docker.2204"]={"comment":"Ubuntu 22.04 dockerfile build instructions"}
+ddf_dict["migratenumpy.sh"]={"comment":"looks like a hacky numpy bugfix"}
+ddf_dict["pyproject.toml"]={"comment":"List of dependencies"}
 
 def DicoDepth(dico):
     if isinstance(dico, dict):
         return 1 + (max(map(DicoDepth, dico.values())) if dico else 0)
     return 0
 
+def MakeSubDico(dico,subdico,subdiconame):
+    output=subdico.copy()
+    output["Codebase"]=dico["Codebase"]+"/"+subdiconame#.copy()
+    output["Branch"]=dico["Branch"]#.copy()
+    return output
 
-def PrintDictStructure(dico,exclude=["comment"],verbose=["comment"],depth=0,named_columns=[]):
+
+def PrintDictStructure(dico,exclude=["comment","verbose","dependencies","functions"],verbose=["comment"],depth=0,named_columns=[],filename=None):
     # prefix components:
     space  =  '    '
     branch = '│   '
@@ -489,10 +519,13 @@ def PrintDictStructure(dico,exclude=["comment"],verbose=["comment"],depth=0,name
         elif key in named_columns:
             # make this column
             ### this is where depth comes in
-
+            namedcols[icol].append(branch)
             namedcols[icol].append(tee+key+" ")
             for info in verbose:
-                namedcols[icol].append(branch+dico[key][info]+" ")
+                try:
+                    namedcols[icol].append(branch+dico[key][info]+" ")
+                except KeyError:
+                    continue
             # add depth-1 elements
             if depth>0:
                 if DicoDepth(dico[key])>0:
@@ -500,28 +533,40 @@ def PrintDictStructure(dico,exclude=["comment"],verbose=["comment"],depth=0,name
                     for key1 in dico[key].keys():
                         if key1 not in exclude:
                             this_str=branch+tee+key1+" "
+                            namedcols[icol].append(branch+branch)
                             namedcols[icol].append(this_str)
                             for info in verbose:
-                                infostr=branch+branch+this_dict[key1][info]+" "
-                                namedcols[icol].append(infostr)
+                                try:
+                                    infostr=branch+branch+this_dict[key1][info]+" "
+                                    namedcols[icol].append(infostr)
+                                except KeyError:
+                                    continue
                             # add depth-2 elements
                             if depth>1:
                                 this_dict1=this_dict[key1]
                                 if DicoDepth(this_dict1)>0:
                                     for key2 in this_dict1.keys():
                                         if key2 not in exclude:
+                                            namedcols[icol].append(branch+branch+branch)
                                             namedcols[icol].append(branch+branch+tee+key2+" ")
                                             for info in verbose:
-                                                namedcols[icol].append(branch+branch+branch+this_dict1[key2][info]+" ")
+                                                try:
+                                                    namedcols[icol].append(branch+branch+branch+this_dict1[key2][info]+" ")
+                                                except KeyError:
+                                                    continue
                                             # add depth-3 elements
                                             if depth>2:
                                                 this_dict2=this_dict1[key2]
                                                 if DicoDepth(this_dict2)>0:
                                                     for key3 in this_dict2.keys():
                                                         if key3 not in exclude:
+                                                            namedcols[icol].append(branch+branch+branch+branch)
                                                             namedcols[icol].append(branch+branch+branch+tee+key3+" ")
                                                             for info in verbose:
-                                                                namedcols[icol].append(branch+branch+branch+branch+this_dict1[key3][info]+" ")
+                                                                try:
+                                                                    namedcols[icol].append(branch+branch+branch+branch+this_dict2[key3][info]+" ")
+                                                                except KeyError:
+                                                                    continue
                                                             # add depth-4 elements
                                                             if depth>3:
                                                                 this_dict3=this_dict2[key3]
@@ -529,30 +574,89 @@ def PrintDictStructure(dico,exclude=["comment"],verbose=["comment"],depth=0,name
                                                                     if key4 not in exclude:
                                                                         namedcols[icol].append(branch+branch+branch+branch+tee+key4+" ")
                                                                         for info in verbose:
-                                                                            namedcols[icol].append(branch+branch+branch+branch+branch+this_dict1[key4][info]+" ")
+                                                                            try:
+                                                                                namedcols[icol].append(branch+branch+branch+branch+branch+this_dict1[key4][info]+" ")
+                                                                            except KeyError:
+                                                                                continue
                                                                         # add depth-5 elements
                                                                         if depth>4:
                                                                             this_dict4=this_dict3[key4]
                                                                             for key5 in this_dict4.keys():
                                                                                 if key5 not in exclude:
+                                                                                    namedcols[icol].append(branch+branch+branch+branch+branch+branch)
                                                                                     namedcols[icol].append(branch+branch+branch+branch+branch+tee+key5+" ")
                                                                                     for info in verbose:
-                                                                                        namedcols[icol].append(branch+branch+branch+branch+branch+branch+this_dict1[key5][info]+" ")
-
-                                            
-
-#            namedcols[icol].append(tee+key+" ")
-#            for info in verbose:
-#                namedcols[icol].append(branch+dico[key][info]+" ")
+                                                                                        try:
+                                                                                            namedcols[icol].append(branch+branch+branch+branch+branch+branch+this_dict1[key5][info]+" ")
+                                                                                        except KeyError:
+                                                                                            continue
             icol+=1
         else:
             # dump all other files in the "remainder" column
             ### this is where depth comes in
+            lastcol.append(branch)
             lastcol.append(tee+key+" ")
             for info in verbose:
-                lastcol.append(branch+dico[key][info]+" ")
+                try:
+                    lastcol.append(branch+dico[key][info]+" ")
+                except KeyError:
+                    continue
+            # add depth-1 elements
+            if depth>0:
+                if DicoDepth(dico[key])>0:
+                    this_dict=dico[key]
+                    for key1 in dico[key].keys():
+                        if key1 not in exclude:
+                            this_str=branch+tee+key1+" "
+                            lastcol.append(branch+branch)
+                            lastcol.append(this_str)
+                            for info in verbose:
+                                try:
+                                    infostr=branch+branch+this_dict[key1][info]+" "
+                                    lastcol.append(infostr)
+                                except KeyError:
+                                    continue
+                            # add depth-2 elements
+                            if depth>1:
+                                this_dict1=this_dict[key1]
+                                if DicoDepth(this_dict1)>0:
+                                    for key2 in this_dict1.keys():
+                                        if key2 not in exclude:
+                                            lastcol.append(branch+branch+branch)
+                                            lastcol.append(branch+branch+tee+key2+" ")
+                                            for info in verbose:
+                                                lastcol.append(branch+branch+branch+this_dict1[key2][info]+" ")
+                                            # add depth-3 elements
+                                            if depth>2:
+                                                this_dict2=this_dict1[key2]
+                                                if DicoDepth(this_dict2)>0:
+                                                    for key3 in this_dict2.keys():
+                                                        if key3 not in exclude:
+                                                            lastcol.append(branch+branch+branch+branch)
+                                                            lastcol.append(branch+branch+branch+tee+key3+" ")
+                                                            for info in verbose:
+                                                                lastcol.append(branch+branch+branch+branch+this_dict1[key3][info]+" ")
+                                                            # add depth-4 elements
+                                                            if depth>3:
+                                                                this_dict3=this_dict2[key3]
+                                                                for key4 in this_dict3.keys():
+                                                                    if key4 not in exclude:
+                                                                        lastcol.append(branch+branch+branch+branch+branch)
+                                                                        lastcol.append(branch+branch+branch+branch+tee+key4+" ")
+                                                                        for info in verbose:
+                                                                            lastcol.append(branch+branch+branch+branch+branch+this_dict1[key4][info]+" ")
+                                                                        # add depth-5 elements
+                                                                        if depth>4:
+                                                                            this_dict4=this_dict3[key4]
+                                                                            for key5 in this_dict4.keys():
+                                                                                if key5 not in exclude:
+                                                                                    lastcol.append(branch+branch+branch+branch+branch+branch)
+                                                                                    lastcol.append(branch+branch+branch+branch+branch+tee+key5+" ")
+                                                                                    for info in verbose:
+                                                                                        lastcol.append(branch+branch+branch+branch+branch+branch+this_dict1[key5][info]+" ")
+    ### put cols together
     namedcols.append(lastcol)
-#    stop
+    ### homogeneise file
     # homogenise column lengths
     maxcollength=0
     for col in namedcols:
@@ -576,17 +680,47 @@ def PrintDictStructure(dico,exclude=["comment"],verbose=["comment"],depth=0,name
         headline = "┬"+"─"*(len(col[0])-1)
         headlines.append(headline)
     headlines[0]=headlines[0].replace("┬","├")
-    headlines[-1]="┐"
+    if len(headlines)==1:
+        headlines[-1]="│"
+    else:
+        headlines[-1]="┐"
     ncols=len(namedcols)
     lencols=len(namedcols[0])+1
     namedcols=np.append(np.array(headlines),np.array(namedcols).T).reshape(lencols,ncols)
+    ### print to terminal
     for iline in range(namedcols.shape[0]):
         linestr=""
         for icol in range(namedcols.shape[1]):
             linestr = linestr+namedcols[iline,icol]
         print(linestr)
+    ### if requested, write to file
+    if filename!=None:
+        f=open(filename,"w")
+        for line in header:
+            f.write(line+"\n")
+        for iline in range(namedcols.shape[0]):
+            linestr=""
+            for icol in range(ncols):
+                linestr = linestr+namedcols[iline,icol]
+            f.write(linestr+"\n")
+        f.close()
 
 
 
+### make plots etc
 
-PrintDictStructure(ddf_dict,named_columns=["DDFacet","SkyModel"],verbose=["comment"],depth=1)
+                
+# print basic DDF folder structure
+PrintDictStructure(ddf_dict,named_columns=["DDFacet","SkyModel"],verbose=["comment"],depth=1,filename="DDF-structure.txt")
+
+# print SkyModel folder structure
+sky_model_dict=MakeSubDico(ddf_dict,ddf_dict["SkyModel"],"SkyModel")
+PrintDictStructure(sky_model_dict,named_columns=["Sky","Other","PSourceExtract"],verbose=["comment","verbose"],depth=2,filename="SkyModel-structure.txt")
+
+# print DDF folder structure
+ddfacet_dir_dict=MakeSubDico(ddf_dict,ddf_dict["DDFacet"],"DDFacet")
+PrintDictStructure(ddfacet_dir_dict,named_columns=["Imager","Other","Gridder","ToolsDir"],verbose=["comment"],depth=2,filename="DDFacet-structure.txt")
+
+
+# print full structure
+#PrintDictStructure(ddf_dict,named_columns=["DDFacet","SkyModel"],verbose=["comment"],depth=3)
