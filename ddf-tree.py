@@ -203,24 +203,24 @@ ddf_dict["DDFacet"]["Imager"]["WSCMS2"]["ClassScaleMachine.py"]={"comment":"desc
 ddf_dict["DDFacet"]["Imager"]["WSCMS2"]["ClassWSCMS_MinorLoop.py"]={"comment":"describe. Looks like an update from WSCMS."}
 ddf_dict["DDFacet"]["Imager"]["WSCMS2"]["__init__.py"]={"comment":"describe"}
 
-ddf_dict["DDFacet"]["Imager"]["ClassCasaImage.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["ClassDDEGridMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["ClassDeconvMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["ClassFacetMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["ClassFacetMachineTessel.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["ClassFrequencyMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["ClassGainMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["ClassImToGrid.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["ClassImageDeconvMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["ClassImageNoiseMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["ClassMaskMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["ClassModelMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["ClassMontblancMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["ClassPSFServer.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["ClassWeighting.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["ModCF.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["ModModelMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["__init__.py"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Imager"]["ClassCasaImage.py"]={"comment":"Follow CASA standards to create a fits image."}
+ddf_dict["DDFacet"]["Imager"]["ClassDDEGridMachine.py"]={"comment":"!CRITICAL! This is the DDE gridder code."}
+ddf_dict["DDFacet"]["Imager"]["ClassDeconvMachine.py"]={"comment":"!CRITICAL! This is the deconvolver code."}
+ddf_dict["DDFacet"]["Imager"]["ClassFacetMachine.py"]={"comment":"Does tesselation, gridding/degridding, projection to image, unprojection to facets."}
+ddf_dict["DDFacet"]["Imager"]["ClassFacetMachineTessel.py"]={"comment":"Extends ClassFacetMachine to do Voronoi split of sky."}
+ddf_dict["DDFacet"]["Imager"]["ClassFrequencyMachine.py"]={"comment":"Interface to fit frequency axis in model image."}
+ddf_dict["DDFacet"]["Imager"]["ClassGainMachine.py"]={"comment":"Defines and applies Clean-gain parameter (NOT antenna gains)"}
+ddf_dict["DDFacet"]["Imager"]["ClassImToGrid.py"]={"comment":"Gives gridded visibilities for a given image, I think."}
+ddf_dict["DDFacet"]["Imager"]["ClassImageDeconvMachine.py"]={"comment":"Handles image-side functions. Unclear what diff with ClassDeconvMachine."}
+ddf_dict["DDFacet"]["Imager"]["ClassImageNoiseMachine.py"]={"comment":"Calculates noise map and gives brutalRestoreds."}
+ddf_dict["DDFacet"]["Imager"]["ClassMaskMachine.py"]={"comment":"Mask management code."}
+ddf_dict["DDFacet"]["Imager"]["ClassModelMachine.py"]={"comment":"Read/write internal model format to and from image/dico"}
+ddf_dict["DDFacet"]["Imager"]["ClassMontblancMachine.py"]={"comment":"Montblanc management code."}
+ddf_dict["DDFacet"]["Imager"]["ClassPSFServer.py"]={"comment":"PSF management code, including crop and frequency normalisation handling"}
+ddf_dict["DDFacet"]["Imager"]["ClassWeighting.py"]={"comment":"Calculates visibility weights."}
+ddf_dict["DDFacet"]["Imager"]["ModCF.py"]={"comment":"Looks like W-term correction code"}
+ddf_dict["DDFacet"]["Imager"]["ModModelMachine.py"]={"comment":"Input model image dictionary, instantiates and returns copy of correct ModelMachine"}
+ddf_dict["DDFacet"]["Imager"]["__init__.py"]={"comment":"Includes DDFacet license."}
 
 ddf_dict["DDFacet"]["Other"]={"comment":"Contains logger, debug and terminal functionalities."}
 ddf_dict["DDFacet"]["Other"]["AsciiReader.py"]={"comment":"Readers for MultiFieldFile, txt, csv, Ascii."}
@@ -249,58 +249,58 @@ ddf_dict["DDFacet"]["Other"]["progressbar.py"]={"comment":"Nadia Alramli progres
 ddf_dict["DDFacet"]["Other"]["reformat.py"]={"comment":"Reformats / characters in a string"}
 ddf_dict["DDFacet"]["Other"]["terminal.py"]={"comment":"Nadia Alramli terminal variables and functions."}
 
-ddf_dict["DDFacet"]["Parset"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Parset"]["DefaultParset.cfg"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Parset"]["MyOptParse.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Parset"]["ParsetChanges"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Parset"]["ReadCFG.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Parset"]["__init__.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Parset"]["ddfacet_stimela_inputs_schema.yaml"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Parset"]["ddfacet_stimela_inputs_tweaks.yaml"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Parset"]["generate_stimela_schema.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Parset"]["test_recipe.yaml"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Parset"]={"comment":"DDF parser and initialiser functionalities."}
+ddf_dict["DDFacet"]["Parset"]["DefaultParset.cfg"]={"comment":"Input for ReadCfg.py, functions as documentation."}
+ddf_dict["DDFacet"]["Parset"]["MyOptParse.py"]={"comment":"DDF command-line parser."}
+ddf_dict["DDFacet"]["Parset"]["ParsetChanges"]={"comment":"Changelog, but from when to when? Mystery."}
+ddf_dict["DDFacet"]["Parset"]["ReadCFG.py"]={"comment":"Builds the parset object from the command line."}
+ddf_dict["DDFacet"]["Parset"]["__init__.py"]={"comment":"Contains DDFacet license."}
+ddf_dict["DDFacet"]["Parset"]["ddfacet_stimela_inputs_schema.yaml"]={"comment":"Stimela yaml for DDF."}
+ddf_dict["DDFacet"]["Parset"]["ddfacet_stimela_inputs_tweaks.yaml"]={"comment":"Hacky bugfix for above."}
+ddf_dict["DDFacet"]["Parset"]["generate_stimela_schema.py"]={"comment":"Stimela schema regenerator."}
+ddf_dict["DDFacet"]["Parset"]["test_recipe.yaml"]={"comment":"Recipe to test Stimela functionalities."}
 
-ddf_dict["DDFacet"]["Tests"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["DebugParsets"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["DebugParsets"]["ParsetDDFacet.Imager.txt"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["DebugParsets"]["ParsetDDFacet.JonesDefs.txt"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["DebugParsets"]["ParsetDDFacet.txt"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["DebugParsets"]["simms.sh"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["DebugParsets"]["tdlconf.profiles"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["DebugParsets"]["testxcen-f9-ddenorm.parset"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Tests"]={"comment":"Various unit, functionality and production tests."}
+ddf_dict["DDFacet"]["Tests"]["DebugParsets"]={"comment":"Please. I beg you. A crumb of documentation."}
+ddf_dict["DDFacet"]["Tests"]["DebugParsets"]["ParsetDDFacet.Imager.txt"]={"comment":"I think this manually sets object values?"}
+ddf_dict["DDFacet"]["Tests"]["DebugParsets"]["ParsetDDFacet.JonesDefs.txt"]={"comment":"Same as above for Jones matrices?"}
+ddf_dict["DDFacet"]["Tests"]["DebugParsets"]["ParsetDDFacet.txt"]={"comment":"I think this tests facet interpolation?"}
+ddf_dict["DDFacet"]["Tests"]["DebugParsets"]["simms.sh"]={"comment":"I think this generates a simulated VLA dataset for tests."}
+ddf_dict["DDFacet"]["Tests"]["DebugParsets"]["tdlconf.profiles"]={"comment":"Looks like Cattery params for 4 test simulations."}
+ddf_dict["DDFacet"]["Tests"]["DebugParsets"]["testxcen-f9-ddenorm.parset"]={"comment":"Looks like an actual test DDF parset!"}
 
-ddf_dict["DDFacet"]["Tests"]["FastUnitTests"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["FastUnitTests"]["TestFitter.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["FastUnitTests"]["TestLibraries.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["FastUnitTests"]["TestStokesConverter.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["FastUnitTests"]["__init__.py"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Tests"]["FastUnitTests"]={"comment":"One functionality test, one unit test, one empty file."}
+ddf_dict["DDFacet"]["Tests"]["FastUnitTests"]["TestFitter.py"]={"comment":"Tests deconvolution"}
+ddf_dict["DDFacet"]["Tests"]["FastUnitTests"]["TestLibraries.py"]={"comment":"\"No unit tests since gridder was removed\""}
+ddf_dict["DDFacet"]["Tests"]["FastUnitTests"]["TestStokesConverter.py"]={"comment":"Actual unit test of Stokes convertor."}
+ddf_dict["DDFacet"]["Tests"]["FastUnitTests"]["__init__.py"]={"comment":"Contains DDFacet license."}
 
-ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["ClassCompareFITSImage.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["TestClean.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["TestFacetPredict.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["TestHogbomClean.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["TestLOFAR_J1329_p4729.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["TestMontblancPredict.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["TestOneMinorCycleSubtract.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["TestSupernovaStokesV.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["TestUltimateDeconvRealSolsSSD.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["TestWSCMS.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["TestWeighting.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["TestWidefieldDirty.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["__init__.py"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]={"comment":"Compares reference images to current outputs made with same params."}
+ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["ClassCompareFITSImage.py"]={"comment":"Abstract class for testing purposes."}
+ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["TestClean.py"]={"comment":"Tests various algos results within 1e-5 to 1e-6"}
+ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["TestFacetPredict.py"]={"comment":"Checks per-facet predict w/wo MeqTr beam."}
+ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["TestHogbomClean.py"]={"comment":"Compares Hogbom clean image w/ reference."}
+ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["TestLOFAR_J1329_p4729.py"]={"comment":"Looks like first test on real data?"}
+ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["TestMontblancPredict.py"]={"comment":"Compares DDF and Montblanc predicts."}
+ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["TestOneMinorCycleSubtract.py"]={"comment":"Commented out. Come on man"}
+ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["TestSupernovaStokesV.py"]={"comment":"Compares Stokes-V clean to reference."}
+ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["TestUltimateDeconvRealSolsSSD.py"]={"comment":"Descriptive name, I assume."}
+ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["TestWSCMS.py"]={"comment":"Compares WSCMS restored to reference image."}
+ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["TestWeighting.py"]={"comment":"Tests PSFs for various imaging weights."}
+ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["TestWidefieldDirty.py"]={"comment":"Tests correctness of big dirty images."}
+ddf_dict["DDFacet"]["Tests"]["ShortAcceptanceTests"]["__init__.py"]={"comment":"Empty"}
 
-ddf_dict["DDFacet"]["Tests"]["VeryLongAcceptanceTests"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["VeryLongAcceptanceTests"]["Test3C147.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["VeryLongAcceptanceTests"]["TestDEEP2.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["VeryLongAcceptanceTests"]["TestDEEP2Montblanc.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["VeryLongAcceptanceTests"]["TestDeepClean.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["VeryLongAcceptanceTests"]["TestHogbomPolClean.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["VeryLongAcceptanceTests"]["TestSupernova.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["VeryLongAcceptanceTests"]["__init__.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Tests"]["__init.py__"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Tests"]["VeryLongAcceptanceTests"]={"comment":"Standardised calls, testing different fields."}
+ddf_dict["DDFacet"]["Tests"]["VeryLongAcceptanceTests"]["Test3C147.py"]={"comment":"Tests CSS field, w/wo beam."}
+ddf_dict["DDFacet"]["Tests"]["VeryLongAcceptanceTests"]["TestDEEP2.py"]={"comment":"Tests Hubble DEEP2 field."}
+ddf_dict["DDFacet"]["Tests"]["VeryLongAcceptanceTests"]["TestDEEP2Montblanc.py"]={"comment":"As above, w/ Montblanc."}
+ddf_dict["DDFacet"]["Tests"]["VeryLongAcceptanceTests"]["TestDeepClean.py"]={"comment":"Dynamic range test."}
+ddf_dict["DDFacet"]["Tests"]["VeryLongAcceptanceTests"]["TestHogbomPolClean.py"]={"comment":"Tests full-Stokes clean."}
+ddf_dict["DDFacet"]["Tests"]["VeryLongAcceptanceTests"]["TestSupernova.py"]={"comment":"Tests complex polarised field clean."}
+ddf_dict["DDFacet"]["Tests"]["VeryLongAcceptanceTests"]["__init__.py"]={"comment":"Contains DDFacet license."}
+ddf_dict["DDFacet"]["Tests"]["__init.py__"]={"comment":"Contains DDF license, sets matplotlib backend to Agg."}
 
-ddf_dict["DDFacet"]["ToolsDir"]={"comment":"describe"}
+ddf_dict["DDFacet"]["ToolsDir"]={"comment":"Contains variety of DDFacet tools."}
 ddf_dict["DDFacet"]["ToolsDir"]["CatToFreqs.py"]={"comment":"Sets frequency values for input catalog"}
 ddf_dict["DDFacet"]["ToolsDir"]["ClassAdaptShape.py"]={"comment":"Make image cutouts or padding"}
 ddf_dict["DDFacet"]["ToolsDir"]["ClassMovieMachine.py"]={"comment":"Makes movies out of png files"}
@@ -325,31 +325,31 @@ ddf_dict["DDFacet"]["ToolsDir"]["findrms.py"]={"comment":"RMS finder. Different 
 ddf_dict["DDFacet"]["ToolsDir"]["gaussfitter2.py"]={"comment":"2D Gaussian fitter w/ various functions."}
 ddf_dict["DDFacet"]["ToolsDir"]["rad2hmsdms.py"]={"comment":"rad-HHMMSS convertor."}
 
-ddf_dict["DDFacet"]["cmake"]={"comment":"describe"}
-ddf_dict["DDFacet"]["cmake"]["FindCasaCore.cmake"]={"comment":"describe"}
-ddf_dict["DDFacet"]["cmake"]["FindCfitsIO.cmake"]={"comment":"describe"}
-ddf_dict["DDFacet"]["cmake"]["FindNumPy.cmake"]={"comment":"describe"}
-ddf_dict["DDFacet"]["cmake"]["FindRT.cmake"]={"comment":"describe"}
-ddf_dict["DDFacet"]["cmake"]["FindWcsLib.cmake"]={"comment":"describe"}
-ddf_dict["DDFacet"]["cmake"]["Findpybind11.cmake"]={"comment":"describe"}
-ddf_dict["DDFacet"]["CMakeLists.txt"]={"comment":"describe"}
-ddf_dict["DDFacet"]["CompareImages.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["CompareImages.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["DDF.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["DDF_parallel.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["FindDiffsCache.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["MakeMovie.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["MemMonitor.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Restore.Py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["SelfCal.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["SplitMS.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["TensorFlowServerFork.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["__init__.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["__main__.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["compatibility.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["fits2png.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["plot_clean_logs.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["report_version.py"]={"comment":"describe"}
+ddf_dict["DDFacet"]["cmake"]={"comment":"Contains cmake build functions to find critical dependencies."}
+ddf_dict["DDFacet"]["cmake"]["FindCasaCore.cmake"]={"comment":"Try to find Casacore include dirs and libraries."}
+ddf_dict["DDFacet"]["cmake"]["FindCfitsIO.cmake"]={"comment":"Try to find CFITSIO."}
+ddf_dict["DDFacet"]["cmake"]["FindNumPy.cmake"]={"comment":"Find the Python NumPy package."}
+ddf_dict["DDFacet"]["cmake"]["FindRT.cmake"]={"comment":"Check for the presence of RunTime compiler (RT)."}
+ddf_dict["DDFacet"]["cmake"]["FindWcsLib.cmake"]={"comment":"Try to find WCSLIB."}
+ddf_dict["DDFacet"]["cmake"]["Findpybind11.cmake"]={"comment":"Find the pybind11 package headers as installed with pip <= 9.0.3"}
+ddf_dict["DDFacet"]["CMakeLists.txt"]={"comment":"Build and install instructions for DDFacet. Deprecated? IDK"}
+ddf_dict["DDFacet"]["CleanSHM"]={"comment":"Intended to clean all semaphores and shared memory. Often only partly successfuly..."}
+ddf_dict["DDFacet"]["CompareImages.py"]={"comment":"Takes IM1.fits, IM2.fits and creates {IM1-IM2}.fits residual."}
+ddf_dict["DDFacet"]["DDF.py"]={"comment":"Main DDFacet executable."}
+ddf_dict["DDFacet"]["DDF_parallel.py"]={"comment":"As above, but MPI, I think."}
+ddf_dict["DDFacet"]["FindDiffsCache.py"]={"comment":"Checks if a cache is the same as a reference cache."}
+ddf_dict["DDFacet"]["MakeMovie.py"]={"comment":"Makes N snapshot DDf images."}
+ddf_dict["DDFacet"]["MemMonitor.py"]={"comment":"Plots memory use."}
+ddf_dict["DDFacet"]["Restore.Py"]={"comment":"Makes restored image from clean model + residual image."}
+ddf_dict["DDFacet"]["SelfCal.py"]={"comment":"KAFCA self-calibration script."}
+ddf_dict["DDFacet"]["SplitMS.py"]={"comment":"Splits MS file from specified t0 to t1."}
+ddf_dict["DDFacet"]["TensorFlowServerFork.py"]={"comment":"I don't know what TensorFlow does."}
+ddf_dict["DDFacet"]["__init__.py"]={"comment":"Contains DDFacet license. import pkg_resources, sets version number."}
+ddf_dict["DDFacet"]["__main__.py"]={"comment":"Calls driver functions."}
+ddf_dict["DDFacet"]["compatibility.py"]={"comment":"Defines some python2 vs python3 stuff."}
+ddf_dict["DDFacet"]["fits2png.py"]={"comment":"Descriptive filename."}
+ddf_dict["DDFacet"]["plot_clean_logs.py"]={"comment":"Makes minimalist logfile from verbose default output."}
+ddf_dict["DDFacet"]["report_version.py"]={"comment":"Returns version."}
 
 
 ddf_dict["SkyModel"]={"comment":"This repository contains the sky model codebase"}
@@ -378,7 +378,7 @@ ddf_dict["SkyModel"]["Mask"]["ClassBrightFaintPerFacet.py"]["dependencies"]=["nu
                                                                              "import SkyModel.Sky.ModRegFile",
                                                                              "import scipy.signal"]
 ddf_dict["SkyModel"]["Mask"]["__init__.py"]={"comment":"Empty"}
-ddf_dict["SkyModel"]["Other"]={"comment":"describe"}
+ddf_dict["SkyModel"]["Other"]={"comment":"Contains variety of convenience functions."}
 ddf_dict["SkyModel"]["Other"]["ClassCasaImage.py"]={"comment":"Creates CASA image objects from inputs."}
 ddf_dict["SkyModel"]["Other"]["ModColor.py"]={"comment":"Defines log colours used."}
 ddf_dict["SkyModel"]["Other"]["ModCoord.py"]={"comment":"Coordinate operation functions."}
@@ -715,11 +715,11 @@ PrintDictStructure(ddf_dict,named_columns=["DDFacet","SkyModel"],verbose=["comme
 
 # print SkyModel folder structure
 sky_model_dict=MakeSubDico(ddf_dict,ddf_dict["SkyModel"],"SkyModel")
-PrintDictStructure(sky_model_dict,named_columns=["Sky","Other","PSourceExtract"],verbose=["comment","verbose"],depth=2,filename="SkyModel-structure.txt")
+PrintDictStructure(sky_model_dict,named_columns=["Sky","Other","PSourceExtract"],verbose=["comment","verbose"],depth=4,filename="SkyModel-structure.txt")
 
 # print DDF folder structure
 ddfacet_dir_dict=MakeSubDico(ddf_dict,ddf_dict["DDFacet"],"DDFacet")
-PrintDictStructure(ddfacet_dir_dict,named_columns=["Imager","Other","Gridder","ToolsDir"],verbose=["comment"],depth=2,filename="DDFacet-structure.txt")
+PrintDictStructure(ddfacet_dir_dict,named_columns=["Imager","Other","Gridder","ToolsDir"],verbose=["comment"],depth=4,filename="DDFacet-structure.txt")
 
 
 # print full structure
