@@ -68,52 +68,52 @@ ddf_dict["DDFacet"]["Gridder"]["common.h"]={"comment":"Namespace definition? I d
 ddf_dict["DDFacet"]["Gridder"]["degridder.h"]={"comment":"!CRITTICAL! Header for degridder"}
 ddf_dict["DDFacet"]["Gridder"]["gridder.h"]={"comment":"!CRITICAL! Header for gridder"}
 
-ddf_dict["DDFacet"]["Imager"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Imager"]={"comment":"Contains all imager functionalities, including deconvolution algorithms."}
 
-ddf_dict["DDFacet"]["Imager"]["GA"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["GA"]["ClassArrayMethodGA.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["GA"]["ClassEvolveGA.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["GA"]["__init__.py"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Imager"]["GA"]={"comment":"Genetic Algorithm - DEAP-based"}
+ddf_dict["DDFacet"]["Imager"]["GA"]["ClassArrayMethodGA.py"]={"comment":"Quality metrics, mutation functions, etc"}
+ddf_dict["DDFacet"]["Imager"]["GA"]["ClassEvolveGA.py"]={"comment":"Defines the per-island GA evolution of the clean model."}
+ddf_dict["DDFacet"]["Imager"]["GA"]["__init__.py"]={"comment":"Contains DDFacet license."}
 
-ddf_dict["DDFacet"]["Imager"]["HOGBOM"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["HOGBOM"]["ClassImageDeconvMachineHogbom.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["HOGBOM"]["ClassModelMachineHogbom.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["HOGBOM"]["__init__.py"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Imager"]["HOGBOM"]={"comment":"Hogbom clean. Minimial implementation to serve as reference for dev work."}
+ddf_dict["DDFacet"]["Imager"]["HOGBOM"]["ClassImageDeconvMachineHogbom.py"]={"comment":"Minimal implementation."}
+ddf_dict["DDFacet"]["Imager"]["HOGBOM"]["ClassModelMachineHogbom.py"]={"comment":"Model manipulation functionalities."}
+ddf_dict["DDFacet"]["Imager"]["HOGBOM"]["__init__.py"]={"comment":"Contains DDFacet license."}
 
-ddf_dict["DDFacet"]["Imager"]["MSMF"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["MSMF"]["ClassImageDeconvMachineMSMF.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["MSMF"]["ClassModelMachineMSMF.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["MSMF"]["ClassMultiScaleMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["MSMF"]["__init__.py"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Imager"]["MSMF"]={"comment":"MultiScaleMultiFrequency clean."}
+ddf_dict["DDFacet"]["Imager"]["MSMF"]["ClassImageDeconvMachineMSMF.py"]={"comment":"MSMF implementation. Documented!"}
+ddf_dict["DDFacet"]["Imager"]["MSMF"]["ClassModelMachineMSMF.py"]={"comment":"Model manipulation functionalities"}
+ddf_dict["DDFacet"]["Imager"]["MSMF"]["ClassMultiScaleMachine.py"]={"comment":"Manages the scales part of MSMF."}
+ddf_dict["DDFacet"]["Imager"]["MSMF"]["__init__.py"]={"comment":"Contains DDFacet license."}
 
-ddf_dict["DDFacet"]["Imager"]["MultiFields"]={"comment":"describe"}      
-ddf_dict["DDFacet"]["Imager"]["MultiFields"]["AppendSubFieldInfo.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["MultiFields"]["ClassDeconvMachineMultiField.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["MultiFields"]["ClassFacetMachineMultiFields.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["MultiFields"]["ClassImageDeconvMachineMultiFields.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["MultiFields"]["ClassImageNoiseMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["MultiFields"]["ClassImageNoiseMachineMultiField.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["MultiFields"]["ClassMaskMachineMultiFields.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["MultiFields"]["ClassModelMachineMultiField.py"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Imager"]["MultiFields"]={"comment":"Multifield clean functionalities. Good for LOFAR-VLBI"}      
+ddf_dict["DDFacet"]["Imager"]["MultiFields"]["AppendSubFieldInfo.py"]={"comment":"Descriptive."}
+ddf_dict["DDFacet"]["Imager"]["MultiFields"]["ClassDeconvMachineMultiField.py"]={"comment":"Multifield deconv. functions."}
+ddf_dict["DDFacet"]["Imager"]["MultiFields"]["ClassFacetMachineMultiFields.py"]={"comment":"Coordinates facets."}
+ddf_dict["DDFacet"]["Imager"]["MultiFields"]["ClassImageDeconvMachineMultiFields.py"]={"comment":"Handles the deconvolution."}
+ddf_dict["DDFacet"]["Imager"]["MultiFields"]["ClassImageNoiseMachine.py"]={"comment":"Gets noise stats, gives brutalrestoreds."}
+ddf_dict["DDFacet"]["Imager"]["MultiFields"]["ClassImageNoiseMachineMultiField.py"]={"comment":"Iterates over the fields."}
+ddf_dict["DDFacet"]["Imager"]["MultiFields"]["ClassMaskMachineMultiFields.py"]={"comment":"Iterates masks over the fields."}
+ddf_dict["DDFacet"]["Imager"]["MultiFields"]["ClassModelMachineMultiField.py"]={"comment":"Iterates models over the fields."}
 
-ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["MORESANE"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["MORESANE"]["ClassMoresane.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["MORESANE"]["ClassMoresaneSingleSlice.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["MORESANE"]["TryMORESANEDeconv.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["MORESANE"]["__init__.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["Orieux"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]={"comment":"Not sure what this is, or if it is still used."}
+ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["MORESANE"]={"comment":"Baffling - this looks like dev that was not finalised."}
+ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["MORESANE"]["ClassMoresane.py"]={"comment":"Inherits from FitsImage"}
+ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["MORESANE"]["ClassMoresaneSingleSlice.py"]={"comment":"????"}
+ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["MORESANE"]["TryMORESANEDeconv.py"]={"comment":"Test file for MORESANE. Contains all actual functions."}
+ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["MORESANE"]["__init__.py"]={"comment":"Empty."}
+ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["Orieux"]={"comment":"Orieux deconvolution functions."}
 ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["Orieux"]["Edwin"]={"comment":"plein de trucs là-dedans. Librairie d\'Orieux."}
-ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["Orieux"]["ClassOrieux.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["Orieux"]["__init__.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["ClassImageDeconvMachineMultiSlice.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["ClassModelMachineMultiSlice.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["__init__.py"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["Orieux"]["ClassOrieux.py"]={"comment":"Wrapper for Orieux library."}
+ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["Orieux"]["__init__.py"]={"comment":"Empty."}
+ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["ClassImageDeconvMachineMultiSlice.py"]={"comment":"DeconvMachine for multislice."}
+ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["ClassModelMachineMultiSlice.py"]={"comment":"ModelMachine for multislice."}
+ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["__init__.py"]={"comment":"Contains DDFacet license."}
       
-ddf_dict["DDFacet"]["Imager"]["SASIR"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SASIR"]["ClassSasir.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SASIR"]["TrySasirDeconv.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SASIR"]["__init__.py"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Imager"]["SASIR"]={"comment":"JL Starck algo, https://www.cosmostat.org/software/sasir"}
+ddf_dict["DDFacet"]["Imager"]["SASIR"]["ClassSasir.py"]={"comment":"DDF class for Sasir"}
+ddf_dict["DDFacet"]["Imager"]["SASIR"]["TrySasirDeconv.py"]={"comment":"Test file for Sasir."}
+ddf_dict["DDFacet"]["Imager"]["SASIR"]["__init__.py"]={"comment":"Containts DDFacet license."}
       
 ddf_dict["DDFacet"]["Imager"]["SSD"]={"comment":"describe"}      
 ddf_dict["DDFacet"]["Imager"]["SSD"]["GA"]={"comment":"describe"}
@@ -190,18 +190,18 @@ ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassParamMachine.py"]={"comment":"descri
 ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassTaylorToPower.py"]={"comment":"describe. One of the SSD2 functions not in SSD."}
 ddf_dict["DDFacet"]["Imager"]["SSD3"]["__init__.py"]={"comment":"describe"}
       
-ddf_dict["DDFacet"]["Imager"]["WSCMS"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["WSCMS"]["ClassImageDeconvMachineWSCMS.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["WSCMS"]["ClassModelMachineWSCMS.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["WSCMS"]["ClassScaleMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["WSCMS"]["__init__.py"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Imager"]["WSCMS"]={"comment":"Implementation of the multi-scale algorithm implemented in wsclean."}
+ddf_dict["DDFacet"]["Imager"]["WSCMS"]["ClassImageDeconvMachineWSCMS.py"]={"comment":"Implementation of wsclean multiscale clean."}
+ddf_dict["DDFacet"]["Imager"]["WSCMS"]["ClassModelMachineWSCMS.py"]={"comment":"Defines WSCMS model."}
+ddf_dict["DDFacet"]["Imager"]["WSCMS"]["ClassScaleMachine.py"]={"comment":"Handles the multiscale aspect."}
+ddf_dict["DDFacet"]["Imager"]["WSCMS"]["__init__.py"]={"comment":"Contains DDFacet license."}
 
-ddf_dict["DDFacet"]["Imager"]["WSCMS2"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["WSCMS2"]["ClassImageDeconvMachineWSCMS.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["WSCMS2"]["ClassModelMachineWSCMS.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["WSCMS2"]["ClassScaleMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["WSCMS2"]["ClassWSCMS_MinorLoop.py"]={"comment":"describe. Looks like an update from WSCMS."}
-ddf_dict["DDFacet"]["Imager"]["WSCMS2"]["__init__.py"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Imager"]["WSCMS2"]={"comment":"Update on wsclean multiscale clean algo."}
+ddf_dict["DDFacet"]["Imager"]["WSCMS2"]["ClassImageDeconvMachineWSCMS.py"]={"comment":"Updated implementation of WSCMS."}
+ddf_dict["DDFacet"]["Imager"]["WSCMS2"]["ClassModelMachineWSCMS.py"]={"comment":"Updated."}
+ddf_dict["DDFacet"]["Imager"]["WSCMS2"]["ClassScaleMachine.py"]={"comment":"Updated."}
+ddf_dict["DDFacet"]["Imager"]["WSCMS2"]["ClassWSCMS_MinorLoop.py"]={"comment":"Absent from initial WSCMS implementation."}
+ddf_dict["DDFacet"]["Imager"]["WSCMS2"]["__init__.py"]={"comment":"Contains DDFacet license."}
 
 ddf_dict["DDFacet"]["Imager"]["ClassCasaImage.py"]={"comment":"Follow CASA standards to create a fits image."}
 ddf_dict["DDFacet"]["Imager"]["ClassDDEGridMachine.py"]={"comment":"!CRITICAL! This is the DDE gridder code."}
@@ -719,7 +719,7 @@ PrintDictStructure(sky_model_dict,named_columns=["Sky","Other","PSourceExtract"]
 
 # print DDF folder structure
 ddfacet_dir_dict=MakeSubDico(ddf_dict,ddf_dict["DDFacet"],"DDFacet")
-PrintDictStructure(ddfacet_dir_dict,named_columns=["Imager","Other","Gridder","ToolsDir"],verbose=["comment"],depth=4,filename="DDFacet-structure.txt")
+PrintDictStructure(ddfacet_dir_dict,named_columns=["Imager","ToolsDir"],verbose=["comment"],depth=4,filename="DDFacet-structure.txt")
 
 
 # print full structure
