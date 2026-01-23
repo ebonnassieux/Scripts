@@ -41,7 +41,7 @@ ddf_dict["DDFacet"]["Data"]["sidereal.py"]={"comment":"External module. \"A Pyth
 
 ddf_dict["DDFacet"]["Gridder"]={"comment":"Contains the gridding/degridding functionalities."}
 ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]={"comment":"I assume this is deprecated."}
-ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["CMakeLists.txt"]={"comment":"Bld and install instructions."}
+ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["CMakeLists.txt"]={"comment":"Build and install instructions."}
 ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["Constants.h"]={"comment":"Defines c and pi."}
 ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["Gridder.c"]={"comment":"!CRITICAL! Gridder code."}
 ddf_dict["DDFacet"]["Gridder"]["old_c_gridder"]["Gridder.h"]={"comment":"!CRITICAL! Gridder header."}
@@ -96,7 +96,7 @@ ddf_dict["DDFacet"]["Imager"]["MultiFields"]["ClassImageNoiseMachineMultiField.p
 ddf_dict["DDFacet"]["Imager"]["MultiFields"]["ClassMaskMachineMultiFields.py"]={"comment":"Iterates masks over the fields."}
 ddf_dict["DDFacet"]["Imager"]["MultiFields"]["ClassModelMachineMultiField.py"]={"comment":"Iterates models over the fields."}
 
-ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]={"comment":"Not sure what this is, or if it is still used."}
+ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]={"comment":"Looks like multi-freq clean functions? Hard to say..."}
 ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["MORESANE"]={"comment":"Baffling - this looks like dev that was not finalised."}
 ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["MORESANE"]["ClassMoresane.py"]={"comment":"Inherits from FitsImage"}
 ddf_dict["DDFacet"]["Imager"]["MultiSliceDeconv"]["MORESANE"]["ClassMoresaneSingleSlice.py"]={"comment":"????"}
@@ -115,80 +115,82 @@ ddf_dict["DDFacet"]["Imager"]["SASIR"]["ClassSasir.py"]={"comment":"DDF class fo
 ddf_dict["DDFacet"]["Imager"]["SASIR"]["TrySasirDeconv.py"]={"comment":"Test file for Sasir."}
 ddf_dict["DDFacet"]["Imager"]["SASIR"]["__init__.py"]={"comment":"Containts DDFacet license."}
       
-ddf_dict["DDFacet"]["Imager"]["SSD"]={"comment":"describe"}      
-ddf_dict["DDFacet"]["Imager"]["SSD"]["GA"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD"]["GA"]["ClassEvolveGA.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD"]["GA"]["ClassSmearSM.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD"]["GA"]["TryGADeconv.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD"]["GA"]["__init__.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD"]["GA"]["algorithms.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD"]["MCMC"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD"]["MCMC"]["ClassMetropolis.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD"]["MCMC"]["ClassPDFMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD"]["MCMC"]["__init__.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD"]["ClassArrayMethodSSD.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD"]["ClassConvMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD"]["ClassImageDeconvMachineSSD.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD"]["ClassInitSSDModelHMP.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD"]["ClassInitSSDModelMoresane.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD"]["ClassIslandDistanceMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD"]["ClassModelMachineSSD.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD"]["ClassMutate.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD"]["ClassParamMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD"]["__init__.py"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Imager"]["SSD"]={"comment":"SubSpace Deconvolution"}      
+ddf_dict["DDFacet"]["Imager"]["SSD"]["GA"]={"comment":"Genetic Algorithm"}
+ddf_dict["DDFacet"]["Imager"]["SSD"]["GA"]["ClassEvolveGA.py"]={"comment":"Init and evolve functions for GA"}
+ddf_dict["DDFacet"]["Imager"]["SSD"]["GA"]["ClassSmearSM.py"]={"comment":"Convolves SM with Gaussians."}
+ddf_dict["DDFacet"]["Imager"]["SSD"]["GA"]["TryGADeconv.py"]={"comment":"Tester files for GA."}
+ddf_dict["DDFacet"]["Imager"]["SSD"]["GA"]["__init__.py"]={"comment":"Empty."}
+ddf_dict["DDFacet"]["Imager"]["SSD"]["GA"]["algorithms.py"]={"comment":"Includes GA algorithmic functions."}
+ddf_dict["DDFacet"]["Imager"]["SSD"]["MCMC"]={"comment":"Monte Carlo Markov Chain"}
+ddf_dict["DDFacet"]["Imager"]["SSD"]["MCMC"]["ClassMetropolis.py"]={"comment":"Metropolis-Hastings algo"}
+ddf_dict["DDFacet"]["Imager"]["SSD"]["MCMC"]["ClassPDFMachine.py"]={"comment":"PDF, logPDF functionalities"}
+ddf_dict["DDFacet"]["Imager"]["SSD"]["MCMC"]["__init__.py"]={"comment":"Empty"}
+ddf_dict["DDFacet"]["Imager"]["SSD"]["ClassArrayMethodSSD.py"]={"comment":"Methods for SSD clean."}
+ddf_dict["DDFacet"]["Imager"]["SSD"]["ClassConvMachine.py"]={"comment":"Convolver."}
+ddf_dict["DDFacet"]["Imager"]["SSD"]["ClassImageDeconvMachineSSD.py"]={"comment":"Deconvolution recipe."}
+ddf_dict["DDFacet"]["Imager"]["SSD"]["ClassInitSSDModelHMP.py"]={"comment":"Initialiser functions."}
+ddf_dict["DDFacet"]["Imager"]["SSD"]["ClassInitSSDModelMoresane.py"]={"comment":"Moresane SSD model funcitons."}
+ddf_dict["DDFacet"]["Imager"]["SSD"]["ClassIslandDistanceMachine.py"]={"comment":"Island manipulation code."}
+ddf_dict["DDFacet"]["Imager"]["SSD"]["ClassModelMachineSSD.py"]={"comment":"SSD model manipulation, incl read/write."}
+ddf_dict["DDFacet"]["Imager"]["SSD"]["ClassMutate.py"]={"comment":"MovePix, mutNormal, MutGaussian."}
+ddf_dict["DDFacet"]["Imager"]["SSD"]["ClassParamMachine.py"]={"comment":"Sets/gets params for SSD per-island init."}
+ddf_dict["DDFacet"]["Imager"]["SSD"]["__init__.py"]={"comment":"Empty."}
       
-ddf_dict["DDFacet"]["Imager"]["SSD2"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD2"]["GA"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD2"]["GA"]["ClassEvolveGA.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD2"]["GA"]["ClassSmearSM.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD2"]["GA"]["TryGADeconv.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD2"]["GA"]["__init__.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD2"]["GA"]["algorithms.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD2"]["MCMC"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD2"]["MCMC"]["ClassMetropolis.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD2"]["MCMC"]["ClassPDFMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD2"]["MCMC"]["__init__.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD2"]["ClassArrayMethodSSD.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD2"]["ClassConvMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD2"]["ClassImageDeconvMachineSSD.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD2"]["ClassInitSSDModelHMP.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD2"]["ClassInitSSDModelMoresane.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD2"]["ClassInitSSDModelMultiSlice.py"]={"comment":"describe. One of the SSD2 functions not in SSD."}
-ddf_dict["DDFacet"]["Imager"]["SSD2"]["ClassIslandDistanceMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD2"]["ClassModelMachineSSD.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD2"]["ClassMutate.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD2"]["ClassParamMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD2"]["ClassTaylorToPower.py"]={"comment":"describe. One of the SSD2 functions not in SSD."}
-ddf_dict["DDFacet"]["Imager"]["SSD2"]["__init__.py"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Imager"]["SSD2"]={"comment":"SubSpace Deconvolution, Mk2."}
+ddf_dict["DDFacet"]["Imager"]["SSD2"]["GA"]={"comment":"Genetic Algorithm support."}
+ddf_dict["DDFacet"]["Imager"]["SSD2"]["GA"]["ClassEvolveGA.py"]={"comment":"GA evolution functions."}
+ddf_dict["DDFacet"]["Imager"]["SSD2"]["GA"]["ClassSmearSM.py"]={"comment":"Image-plane residual functions? Investigate."}
+ddf_dict["DDFacet"]["Imager"]["SSD2"]["GA"]["TryGADeconv.py"]={"comment":"Tests."}
+ddf_dict["DDFacet"]["Imager"]["SSD2"]["GA"]["__init__.py"]={"comment":"Empty."}
+ddf_dict["DDFacet"]["Imager"]["SSD2"]["GA"]["algorithms.py"]={"comment":"DEAP toolbox style function."}
+ddf_dict["DDFacet"]["Imager"]["SSD2"]["MCMC"]={"comment":"Monte Carlo Markov Chain support."}
+ddf_dict["DDFacet"]["Imager"]["SSD2"]["MCMC"]["ClassMetropolis.py"]={"comment":"MC chain manipulation functions."}
+ddf_dict["DDFacet"]["Imager"]["SSD2"]["MCMC"]["ClassPDFMachine.py"]={"comment":"PDF, logPDF manipulation functions."}
+ddf_dict["DDFacet"]["Imager"]["SSD2"]["MCMC"]["__init__.py"]={"comment":"Empty."}
+ddf_dict["DDFacet"]["Imager"]["SSD2"]["ClassArrayMethodSSD.py"]={"comment":"Array manipulation methods for SSD."}
+ddf_dict["DDFacet"]["Imager"]["SSD2"]["ClassConvMachine.py"]={"comment":"Convolution operators."}
+ddf_dict["DDFacet"]["Imager"]["SSD2"]["ClassImageDeconvMachineSSD.py"]={"comment":"Deconvolution recipe"}
+ddf_dict["DDFacet"]["Imager"]["SSD2"]["ClassInitSSDModelHMP.py"]={"comment":"Wrapper around a single HMP machine."}
+ddf_dict["DDFacet"]["Imager"]["SSD2"]["ClassInitSSDModelMoresane.py"]={"comment":"MORESANE SSD model support."}
+ddf_dict["DDFacet"]["Imager"]["SSD2"]["ClassInitSSDModelMultiSlice.py"]={"comment":"Multislice support. Freq modeling? In SSD2, not in SSD."}
+ddf_dict["DDFacet"]["Imager"]["SSD2"]["ClassIslandDistanceMachine.py"]={"comment":"Island manipulation functions."}
+ddf_dict["DDFacet"]["Imager"]["SSD2"]["ClassModelMachineSSD.py"]={"comment":"Model component and image manipulation functions"}
+ddf_dict["DDFacet"]["Imager"]["SSD2"]["ClassMutate.py"]={"comment":"MovePix, mutNormal, mutGaussian."}
+ddf_dict["DDFacet"]["Imager"]["SSD2"]["ClassParamMachine.py"]={"comment":"Sets/gets params for SSD per-island init.."}
+ddf_dict["DDFacet"]["Imager"]["SSD2"]["ClassTaylorToPower.py"]={"comment":"Converter from power-law to Taylor expansion. In SSD2, not in SSD."}
+ddf_dict["DDFacet"]["Imager"]["SSD2"]["__init__.py"]={"comment":"Empty."}
       
-ddf_dict["DDFacet"]["Imager"]["SSD3"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["GA"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["GA"]["ClassEvolveGA.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["GA"]["ClassSmearSM.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["GA"]["TryGADeconv.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["GA"]["__init__.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["GA"]["algorithms.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["MCMC"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["MCMC"]["ClassMetropolis.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["MCMC"]["ClassPDFMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["MCMC"]["__init__.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["MultiNest"]={"comment":"describe. In SSD3 and not SSD2."}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["MultiNest"]["ClassMultiNest.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["MultiNest"]["__init__.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["MultiNest"]["svgd.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassArrayMethodSSD.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassBreakIslands.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassConvMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassImageDeconvMachineSSD.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassInitSSDModelHMP.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassInitSSDModelMoresane.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassInitSSDModelMultiSlice.py"]={"comment":"describe. One of the SSD2 functions not in SSD."}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassIslandDistanceMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassModelMachineSSD.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassMutate.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassParamMachine.py"]={"comment":"describe"}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassTaylorToPower.py"]={"comment":"describe. One of the SSD2 functions not in SSD."}
-ddf_dict["DDFacet"]["Imager"]["SSD3"]["__init__.py"]={"comment":"describe"}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]={"comment":"SubSpace Deconvolution, Mk3"}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["GA"]={"comment":"Genetic Algorithm support"}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["GA"]["ClassEvolveGA.py"]={"comment":"Handles per-island GA evolution."}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["GA"]["ClassSmearSM.py"]={"comment":"Applies smearing decorr factor to sky model."}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["GA"]["TryGADeconv.py"]={"comment":"Test file for GA deconv."}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["GA"]["__init__.py"]={"comment":"Empty."}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["GA"]["algorithms.py"]={"comment":"This file is part of DEAP. Contains specific algorithms."}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["MCMC"]={"comment":"Monte Carlo Markov Chain algorithm support"}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["MCMC"]["ClassMetropolis.py"]={"comment":"Metropolis-Hastings class."}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["MCMC"]["ClassPDFMachine.py"]={"comment":"PDF functions."}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["MCMC"]["__init__.py"]={"comment":"Empty."}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["MultiNest"]={"comment":"New in SSD3. https://github.com/JohannesBuchner/MultiNest"}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["MultiNest"]["ClassMultiNest.py"]={"comment":"MultiNest implementation in DDF."}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["MultiNest"]["__init__.py"]={"comment":"Empty."}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["MultiNest"]["svgd.py"]={"comment":"Likelihood estimation functions?"}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassArrayMethodSSD.py"]={"comment":"Methods for SSD array manipulation."}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassBreakIslands.py"]={"comment":"Breaks large islands into sub-islands; optimisation."}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassConvMachine.py"]={"comment":"Convolution operations."}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassPreviousModels.py"]={"comment":"Fits previous models."}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassFluxScale.py"]={"comment":"Sets flux scale to linear."}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassImageDeconvMachineSSD.py"]={"comment":"Performs the SSD deconvolution."}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassInitSSDModelHMP.py"]={"comment":"Wrapper around a single HMP machine."}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassInitSSDModelMoresane.py"]={"comment":"MORESANE SSD model support."}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassInitSSDModelMultiSlice.py"]={"comment":"Multislice support. Freq modeling? In SSD2, not in SSD."}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassIslandDistanceMachine.py"]={"comment":"Island manipulation functions."}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassModelMachineSSD.py"]={"comment":"Model component and image manipulation functions."}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassMutate.py"]={"comment":"MovePix functions."}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassParamMachine.py"]={"comment":"Parametric functions for gain constraints."}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["ClassTaylorToPower.py"]={"comment":"Converter from power-law to Taylor expansion. In SSD2, not in SSD."}
+ddf_dict["DDFacet"]["Imager"]["SSD3"]["__init__.py"]={"comment":"Empty."}
       
 ddf_dict["DDFacet"]["Imager"]["WSCMS"]={"comment":"Implementation of the multi-scale algorithm implemented in wsclean."}
 ddf_dict["DDFacet"]["Imager"]["WSCMS"]["ClassImageDeconvMachineWSCMS.py"]={"comment":"Implementation of wsclean multiscale clean."}
@@ -343,7 +345,7 @@ ddf_dict["DDFacet"]["MemMonitor.py"]={"comment":"Plots memory use."}
 ddf_dict["DDFacet"]["Restore.Py"]={"comment":"Makes restored image from clean model + residual image."}
 ddf_dict["DDFacet"]["SelfCal.py"]={"comment":"KAFCA self-calibration script."}
 ddf_dict["DDFacet"]["SplitMS.py"]={"comment":"Splits MS file from specified t0 to t1."}
-ddf_dict["DDFacet"]["TensorFlowServerFork.py"]={"comment":"I don't know what TensorFlow does."}
+ddf_dict["DDFacet"]["TensorFlowServerFork.py"]={"comment":"I cannot parse TensorFlow specifics."}
 ddf_dict["DDFacet"]["__init__.py"]={"comment":"Contains DDFacet license. import pkg_resources, sets version number."}
 ddf_dict["DDFacet"]["__main__.py"]={"comment":"Calls driver functions."}
 ddf_dict["DDFacet"]["compatibility.py"]={"comment":"Defines some python2 vs python3 stuff."}
@@ -635,7 +637,7 @@ def PrintDictStructure(dico,exclude=["comment","verbose","dependencies","functio
                                                             lastcol.append(branch+branch+branch+branch)
                                                             lastcol.append(branch+branch+branch+tee+key3+" ")
                                                             for info in verbose:
-                                                                lastcol.append(branch+branch+branch+branch+this_dict1[key3][info]+" ")
+                                                                lastcol.append(branch+branch+branch+branch+this_dict2[key3][info]+" ")
                                                             # add depth-4 elements
                                                             if depth>3:
                                                                 this_dict3=this_dict2[key3]
@@ -644,7 +646,7 @@ def PrintDictStructure(dico,exclude=["comment","verbose","dependencies","functio
                                                                         lastcol.append(branch+branch+branch+branch+branch)
                                                                         lastcol.append(branch+branch+branch+branch+tee+key4+" ")
                                                                         for info in verbose:
-                                                                            lastcol.append(branch+branch+branch+branch+branch+this_dict1[key4][info]+" ")
+                                                                            lastcol.append(branch+branch+branch+branch+branch+this_dict3[key4][info]+" ")
                                                                         # add depth-5 elements
                                                                         if depth>4:
                                                                             this_dict4=this_dict3[key4]
@@ -653,7 +655,7 @@ def PrintDictStructure(dico,exclude=["comment","verbose","dependencies","functio
                                                                                     lastcol.append(branch+branch+branch+branch+branch+branch)
                                                                                     lastcol.append(branch+branch+branch+branch+branch+tee+key5+" ")
                                                                                     for info in verbose:
-                                                                                        lastcol.append(branch+branch+branch+branch+branch+branch+this_dict1[key5][info]+" ")
+                                                                                        lastcol.append(branch+branch+branch+branch+branch+branch+this_dict4[key5][info]+" ")
     ### put cols together
     namedcols.append(lastcol)
     ### homogeneise file
@@ -719,8 +721,10 @@ PrintDictStructure(sky_model_dict,named_columns=["Sky","Other","PSourceExtract"]
 
 # print DDF folder structure
 ddfacet_dir_dict=MakeSubDico(ddf_dict,ddf_dict["DDFacet"],"DDFacet")
-PrintDictStructure(ddfacet_dir_dict,named_columns=["Imager","ToolsDir"],verbose=["comment"],depth=4,filename="DDFacet-structure.txt")
+PrintDictStructure(ddfacet_dir_dict,named_columns=["Imager",],verbose=["comment"],depth=2,filename="DDFacet-structure.txt")
 
+# do final, single-column plan
+PrintDictStructure(ddf_dict,named_columns=[],verbose=["comment"],depth=4,filename="DDF-structure-full.txt")
 
 # print full structure
 #PrintDictStructure(ddf_dict,named_columns=["DDFacet","SkyModel"],verbose=["comment"],depth=3)
