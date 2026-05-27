@@ -52,9 +52,10 @@ def MakeCutout(filename,RA,dec,ArcMinSize,cutoutname=None):
     rmin,rmax,dmin,dmax=calcRADecSearchBox(RAdeg,Decdeg,ArcMinSize/60.)
     cutout = clipUsingRADecCoords(imdata,imwcs,rmin,rmax,dmin,dmax)
     im=cutout["data"]
+    npix1,npix2 = cutout["data"].shape
     if cutoutname==None:
         cutoutname=filename+".cutout.fits"
-    saveFITS(cutoutname,cutout['data'],cutout['wcs'])
+    saveFITS(cutoutname,cutout['data'].reshape((1,1,npix1,npix2)),cutout['wcs'])
     print("Cutout is: %s"%cutoutname)
     imhdu.close()
 
